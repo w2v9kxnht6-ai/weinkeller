@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Weinkeller">
+    <title>🍷 Weinkeller</title>
+    <link rel="manifest" href="manifest.json">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding-bottom: 80px;
+        }
+        
+        .header {
+            background: rgba(0,0,0,0.3);
+            backdrop-filter: blur(10px);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+        }
+        
+        .header h1 {
+            font-size: 1.8em;
+            margin-bottom: 5px;
+        }
+        
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            padding: 20px;
+        }
+        
+        .stat-card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .stat-card .icon {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .stat-card .value {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #667eea;
+            margin: 5px 0;
+        }
+        
+        .stat-card .label {
+            color: #666;
+            font-size: 0.9em;
+        }
+        
+        .tabs {
+            display: flex;
+            background: white;
+            margin: 20px;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .tab {
+            flex: 1;
+            padding: 15px;
+            text-align: center;
+            background: white;
+            border: none;
+            font-size: 1em;
+            font-weight: 500;
+            color: #666;
+            cursor: pointer;
+        }
+        
+        .tab.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .search-box {
+            margin: 0 20px 20px;
+            position: relative;
+        }
+        
+        .search-box input {
+            width: 100%;
+            padding: 15px 45px 15px 20px;
+            border: none;
+            border-radius: 15px;
+            font-size: 1em;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .wine-list {
+            padding: 0 20px;
+        }
+        
+        .wine-card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            cursor: pointer;
+            position: relative;
+        }
+        
+        .wine-card:active {
+            transform: scale(0.98);
+        }
+        
+        .wine-card .header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        
+        .wine-card .position {
+            background: #667eea;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-weight: bold;
+        }
+        
+        .ring {
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-weight: bold;
+            font-size: 0.85em;
+        }
+        
+        .ring-rosa { background: #ffb3c1; color: #8b0000; }
+        .ring-gruen { background: #b3ffb3; color: #006400; }
+        .ring-blau { background: #b3d9ff; color: #00008b; }
+        
+        .wine-card h3 {
+            color: #2d1b69;
+            font-size: 1.2em;
+            margin-bottom: 5px;
+        }
+        
+        .wine-card .producer {
+            color: #666;
+            margin-bottom: 12px;
+        }
+        
+        .wine-card .details {
+            display: flex;
+            justify-content: space-between;
+            padding-top: 12px;
+            border-top: 1px solid #f0f0f0;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.8);
+            z-index: 1000;
+            overflow-y: auto;
+        }
+        
+        .modal.active {
+            display: flex;
+            align-items: flex-start;
+            padding: 20px;
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 20px;
+            padding: 25px;
+            width: 100%;
+            max-width: 500px;
+            margin: auto;
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .close-btn {
+            font-size: 1.8em;
+            cursor: pointer;
+            background: none;
+            border: none;
+            color: #999;
+        }
+        
+        .btn {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            margin: 10px 0;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .form-group {
+            margin: 15px 0;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1em;
+            font-family: inherit;
+        }
+        
+        .form-group textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+        
+        .rating-input {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        .rating-input input {
+            width: 80px !important;
+        }
+        
+        .export-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 15px;
+            margin: 20px;
+        }
+        
+        .export-section h3 {
+            margin-bottom: 15px;
+            color: #2d1b69;
+        }
+        
+        .info-box {
+            background: #e7f3ff;
+            border-left: 4px solid #2196F3;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px;
+        }
+        
+        .success-msg {
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+            color: #155724;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+        
+        .fab {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            font-size: 2em;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            cursor: pointer;
+            z-index: 99;
+        }
+        
+        .fab:active {
+            transform: scale(0.95);
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🍷 Mein Weinkeller</h1>
+        <div class="subtitle" id="subtitle">Lade...</div>
+    </div>
+
+    <div id="app">
+        <div class="info-box">
+            ✅ <strong>Deine 139 Weine geladen!</strong> Änderungen werden im Browser gespeichert (localStorage). 
+            Für permanente Speicherung: DB-Datei am Ende exportieren!
+        </div>
+
+        <div class="stats-container">
+            <div class="stat-card">
+                <div class="icon">🍾</div>
+                <div class="value" id="stat-flaschen">139</div>
+                <div class="label">Flaschen</div>
+            </div>
+            <div class="stat-card">
+                <div class="icon">💰</div>
+                <div class="value" id="stat-wert">€4,752</div>
+                <div class="label">Wert</div>
+            </div>
+            <div class="stat-card">
+                <div class="icon">📈</div>
+                <div class="value" id="stat-perf">+76%</div>
+                <div class="label">Performance</div>
+            </div>
+            <div class="stat-card">
+                <div class="icon">🎯</div>
+                <div class="value" id="stat-gewinn">€2,058</div>
+                <div class="label">Gewinn</div>
+            </div>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" data-tab="alle">Alle</button>
+            <button class="tab" data-tab="rosa">🌸</button>
+            <button class="tab" data-tab="gruen">🟢</button>
+            <button class="tab" data-tab="blau">🔵</button>
+        </div>
+
+        <div class="search-box">
+            <input type="text" id="search" placeholder="Suche...">
+        </div>
+
+        <div class="wine-list" id="wine-list">
+            <div style="text-align: center; padding: 40px; color: white;">
+                Lade Datenbank aus localStorage...
+            </div>
+        </div>
+
+        <div class="export-section">
+            <h3>💾 Datenbank exportieren</h3>
+            <button class="btn btn-primary" onclick="exportDB()">Download weinkeller.db</button>
+            <p style="margin-top: 10px; font-size: 0.9em; color: #666;">
+                Speichere deine Änderungen permanent!
+            </p>
+        </div>
+    </div>
+
+    <!-- FAB Button -->
+    <button class="fab" onclick="showDrinkDialog()" title="Wein trinken">🍷</button>
+
+    <!-- Modal für Wein-Details -->
+    <div class="modal" id="modal"></div>
+
+    <!-- Modal für "Trinken" -->
+    <div class="modal" id="drink-modal"></div>
+
+    <script>
+        // Simple localStorage-basierte Version
+        // Daten werden im Browser gespeichert
+        
+        let wines = [];
+        
+        // Sample-Daten (werden durch echte DB überschrieben wenn geladen)
+        const sampleWines = [{"id": 1, "position": "A1", "produzent": "Fontodi", "weinname": "Flaccianello della Pieve", "jahrgang": 2006, "traube": "100% SG", "flaschengroesse": "0.75L", "alkohol": "15.0%", "restzucker": "1.8", "saeure": "5.8", "ausbau": "24M Barrique", "einkaufspreis": 49.9, "aktueller_wert": 185.0, "ratings": "GR:3|WS:99|JS:99|RP:94|V:98|Dec:98|FS:97|JR:18|AWC:Gold", "ring": "Blau", "trinkreife_start": "2016", "trinkreife_ende": "2036", "dekantierzeit": "3h", "notiz": "KORREKTUR: Wert 220→185€; RP 97→94", "wertsteigerung_prozent": 270.7414829659319, "wertsteigerung_absolut": 135.1}, {"id": 2, "position": "A2", "produzent": "Fontodi", "weinname": "Flaccianello della Pieve", "jahrgang": 2006, "traube": "100% SG", "flaschengroesse": "0.75L", "alkohol": "15.0%", "restzucker": "1.8", "saeure": "5.8", "ausbau": "24M Barrique", "einkaufspreis": 49.9, "aktueller_wert": 185.0, "ratings": "GR:3|WS:99|JS:99|RP:94|V:98|Dec:98|FS:97|JR:18|AWC:Gold", "ring": "Blau", "trinkreife_start": "2016", "trinkreife_ende": "2036", "dekantierzeit": "3h", "notiz": "KORREKTUR: Wert 220→185€; RP 97→94", "wertsteigerung_prozent": 270.7414829659319, "wertsteigerung_absolut": 135.1}, {"id": 3, "position": "A3", "produzent": "Fuligni", "weinname": "Brunello di Montalcino DOCG", "jahrgang": 2004, "traube": "100% SG Gr", "flaschengroesse": "0.75L", "alkohol": "14.5%", "restzucker": "2.0", "saeure": "", "ausbau": "Slav.Eiche", "einkaufspreis": 36.33, "aktueller_wert": 115.0, "ratings": "GR:3|JS:96|RP:94|WS:95|V:94|FS:92|JR:17.5|AWC:Gold", "ring": "", "trinkreife_start": "2010", "trinkreife_ende": "2030", "dekantierzeit": "2h", "notiz": "KORREKTUR: Wert erhalten | Ring entfernt (hält stabil bis 2030)", "wertsteigerung_prozent": 216.54280209193507, "wertsteigerung_absolut": 78.67}, {"id": 4, "position": "A4", "produzent": "Tenuta dell'Ornellaia", "weinname": "Le Volte dell'Ornellaia", "jahrgang": 2010, "traube": "ME/CS/SG", "flaschengroesse": "0.75L", "alkohol": "14.0%", "restzucker": "", "saeure": "", "ausbau": "Barrique", "einkaufspreis": 18.23, "aktueller_wert": 30.0, "ratings": "RP:90|JS:91|FS:89|GR:2", "ring": "Rosa", "trinkreife_start": "JETZT", "trinkreife_ende": "SOFORT", "dekantierzeit": "1h", "notiz": "KORREKTUR: Peak verpasst (2012-2018) - Zweitwein nicht für 15+ Jahre", "wertsteigerung_prozent": 64.56390565002742, "wertsteigerung_absolut": 11.77}, {"id": 5, "position": "A5", "produzent": "Fattoria del Cerro", "weinname": "Vino Nobile di Montepulciano Riserva DOCG", "jahrgang": 2016, "traube": "100% SG", "flaschengroesse": "0.75L", "alkohol": "14.0%", "restzucker": "2.1", "saeure": "", "ausbau": "24M Eiche", "einkaufspreis": 17.49, "aktueller_wert": 25.0, "ratings": "GR:3|FS:92|JS:92|WE:91|Dec:91", "ring": "", "trinkreife_start": "2021", "trinkreife_ende": "2032", "dekantierzeit": "", "notiz": "KORREKTUR: Ratings ergänzt FS:92 JS:92", "wertsteigerung_prozent": 42.93882218410521, "wertsteigerung_absolut": 7.510000000000002}, {"id": 6, "position": "A6", "produzent": "Fattoria del Cerro", "weinname": "Vino Nobile di Montepulciano Riserva DOCG", "jahrgang": 2016, "traube": "100% SG", "flaschengroesse": "0.75L", "alkohol": "14.0%", "restzucker": "2.1", "saeure": "", "ausbau": "24M Eiche", "einkaufspreis": 17.49, "aktueller_wert": 25.0, "ratings": "GR:3|FS:92|JS:92|WE:91|Dec:91", "ring": "", "trinkreife_start": "2021", "trinkreife_ende": "2032", "dekantierzeit": "", "notiz": "KORREKTUR: Ratings ergänzt FS:92 JS:92", "wertsteigerung_prozent": 42.93882218410521, "wertsteigerung_absolut": 7.510000000000002}, {"id": 7, "position": "A7", "produzent": "Salcheto", "weinname": "Vino Nobile di Montepulciano DOCG", "jahrgang": 2018, "traube": "SG/Can/Mam", "flaschengroesse": "0.75L", "alkohol": "13.5%", "restzucker": "1.0", "saeure": "", "ausbau": "18M Eiche", "einkaufspreis": 17.09, "aktueller_wert": 22.0, "ratings": "GR:3|FS:94|JS:92|Dec:92|WS:91", "ring": "", "trinkreife_start": "2021", "trinkreife_ende": "2031", "dekantierzeit": "", "notiz": "", "wertsteigerung_prozent": 28.730251609128143, "wertsteigerung_absolut": 4.91}, {"id": 84, "position": "Außenlager", "produzent": "Antinori", "weinname": "Matarocchio Bolgheri DOC Superiore", "jahrgang": 2019, "traube": "100% CF", "flaschengroesse": "0.75L", "alkohol": "14.5%", "restzucker": "1.2", "saeure": "5.5", "ausbau": "18M Barrique", "einkaufspreis": 224.5, "aktueller_wert": 440.0, "ratings": "GR:3|FS:98|RP:97|V:98|JS:97|WS:96|Dec:97|JR:18+|WE:98|AWC:Gold", "ring": "Blau", "trinkreife_start": "2026", "trinkreife_ende": "2046+", "dekantierzeit": "", "notiz": "", "wertsteigerung_prozent": 95.99109131403118, "wertsteigerung_absolut": 215.5}, {"id": 85, "position": "Außenlager", "produzent": "Château Les Trois Croix", "weinname": "Fronsac AOC", "jahrgang": 2019, "traube": "ME/CF", "flaschengroesse": "0.75L", "alkohol": "14.5%", "restzucker": "", "saeure": "", "ausbau": "Barrique", "einkaufspreis": 25.0, "aktueller_wert": 32.0, "ratings": "FS:92|JS:93|Dec:92|RP:91", "ring": "", "trinkreife_start": "2024", "trinkreife_ende": "2035", "dekantierzeit": "", "notiz": "", "wertsteigerung_prozent": 28.000000000000004, "wertsteigerung_absolut": 7.0}, {"id": 86, "position": "Außenlager", "produzent": "Château Les Trois Croix", "weinname": "Fronsac AOC", "jahrgang": 2019, "traube": "ME/CF", "flaschengroesse": "0.75L", "alkohol": "14.5%", "restzucker": "", "saeure": "", "ausbau": "Barrique", "einkaufspreis": 25.0, "aktueller_wert": 32.0, "ratings": "FS:92|JS:93|Dec:92|RP:91", "ring": "", "trinkreife_start": "2024", "trinkreife_ende": "2035", "dekantierzeit": "", "notiz": "", "wertsteigerung_prozent": 28.000000000000004, "wertsteigerung_absolut": 7.0}, {"id": 87, "position": "Außenlager", "produzent": "Château Les Trois Croix", "weinname": "Fronsac AOC", "jahrgang": 2019, "traube": "ME/CF", "flaschengroesse": "0.75L", "alkohol": "14.5%", "restzucker": "", "saeure": "", "ausbau": "Barrique", "einkaufspreis": 25.0, "aktueller_wert": 32.0, "ratings": "FS:92|JS:93|Dec:92|RP:91", "ring": "", "trinkreife_start": "2024", "trinkreife_ende": "2035", "dekantierzeit": "", "notiz": "", "wertsteigerung_prozent": 28.000000000000004, "wertsteigerung_absolut": 7.0}, {"id": 88, "position": "Außenlager", "produzent": "Château Les Trois Croix", "weinname": "Fronsac AOC", "jahrgang": 2019, "traube": "ME/CF", "flaschengroesse": "0.75L", "alkohol": "14.5%", "restzucker": "", "saeure": "", "ausbau": "Barrique", "einkaufspreis": 25.0, "aktueller_wert": 32.0, "ratings": "FS:92|JS:93|Dec:92|RP:91", "ring": "", "trinkreife_start": "2024", "trinkreife_ende": "2035", "dekantierzeit": "", "notiz": "", "wertsteigerung_prozent": 28.000000000000004, "wertsteigerung_absolut": 7.0}, {"id": 89, "position": "Außenlager", "produzent": "Château Les Trois Croix", "weinname": "Fronsac AOC", "jahrgang": 2019, "traube": "ME/CF", "flaschengroesse": "0.75L", "alkohol": "14.5%", "restzucker": "", "saeure": "", "ausbau": "Barrique", "einkaufspreis": 25.0, "aktueller_wert": 32.0, "ratings": "FS:92|JS:93|Dec:92|RP:91", "ring": "", "trinkreife_start": "2024", "trinkreife_ende": "2035", "dekantierzeit": "", "notiz": "", "wertsteigerung_prozent": 28.000000000000004, "wertsteigerung_absolut": 7.0}, {"id": 90, "position": "Außenlager", "produzent": "Pferschy-Seper", "weinname": "Grüner Veltliner Kabinett", "jahrgang": 2023, "traube": "100% GV", "flaschengroesse": "0.75L", "alkohol": "13.0%", "restzucker": "1.5", "saeure": "5.5", "ausbau": "SS", "einkaufspreis": 6.12, "aktueller_wert": 10.0, "ratings": "AWC:Silber", "ring": "Rosa", "trinkreife_start": "2024", "trinkreife_ende": "2026", "dekantierzeit": "", "notiz": "", "wertsteigerung_prozent": 63.39869281045751, "wertsteigerung_absolut": 3.88}, {"id": 91, "position": "Außenlager", "produzent": "Pferschy-Seper", "weinname": "Grüner Veltliner Kabinett", "jahrgang": 2023, "traube": "100% GV", "flaschengroesse": "0.75L", "alkohol": "13.0%", "restzucker": "1.5", "saeure": "5.5", "ausbau": "SS", "einkaufspreis": 6.12, "aktueller_wert": 10.0, "ratings": "AWC:Silber", "ring": "Rosa", "trinkreife_start": "2024", "trinkreife_ende": "2026", "dekantierzeit": "", "notiz": "", "wertsteigerung_prozent": 63.39869281045751, "wertsteigerung_absolut": 3.88}, {"id": 92, "position": "Außenlager", "produzent": "Pferschy-Seper", "weinname": "Grüner Veltliner Kabinett", "jahrgang": 2023, "traube": "100% GV", "flaschengroesse": "0.75L", "alkohol": "13.0%", "restzucker": "1.5", "saeure": "5.5", "ausbau": "SS", "einkaufspreis": 6.12, "aktueller_wert": 10.0, "ratings": "AWC:Silber", "ring": "Rosa", "trinkreife_start": "2024", "trinkreife_ende": "2026", "dekantierzeit": "", "notiz": "", "wertsteigerung_prozent": 63.39869281045751, "wertsteigerung_absolut": 3.88}, {"id": 93, "position": "Außenlager", "produzent": "Pferschy-Seper", "weinname": "Grüner Veltliner Kabinett", "jahrgang": 2023, "traube": "100% GV", "flaschengroesse": "0.75L", "alkohol": "13.0%", "restzucker": "1.5", "saeure": "5.5", "ausbau": "SS", "einkaufspreis": 6.12, "aktueller_wert": 10.0, "ratings": "AWC:Silber", "ring": "Rosa", "trinkreife_start": "2024", "trinkreife_ende": "2026", "dekantierzeit": "", "notiz": "", "wertsteigerung_prozent": 63.39869281045751, "wertsteigerung_absolut": 3.88}, {"id": 94, "position": "Außenlager", "produzent": "Pferschy-Seper", "weinname": "Grüner Veltliner Kabinett", "jahrgang": 2023, "traube": "100% GV", "flaschengroesse": "0.75L", "alkohol": "13.0%", "restzucker": "1.5", "saeure": "5.5", "ausbau": "SS", "einkaufspreis": 6.12, "aktueller_wert": 10.0, "ratings": "AWC:Silber", "ring": "Rosa", "trinkreife_start": "2024", "trinkreife_ende": "2026", "dekantierzeit": "", "notiz": "", "wertsteigerung_prozent": 63.39869281045751, "wertsteigerung_absolut": 3.88}, {"id": 95, "position": "Außenlager", "produzent": "Damjanic", "weinname": "Malvazija Istriana", "jahrgang": 2024, "traube": "100% MAL", "flaschengroesse": "0.75L", "alkohol": "12.5%", "restzucker": "", "saeure": "", "ausbau": "SS", "einkaufspreis": 12.9, "aktueller_wert": 13.0, "ratings": "", "ring": "", "trinkreife_start": "2025", "trinkreife_ende": "2026", "dekantierzeit": "", "notiz": "", "wertsteigerung_prozent": 0.7751937984496096, "wertsteigerung_absolut": 0.09999999999999964}, {"id": 96, "position": "Außenlager", "produzent": "Damjanic", "weinname": "Malvazija Istriana", "jahrgang": 2024, "traube": "100% MAL", "flaschengroesse": "0.75L", "alkohol": "12.5%", "restzucker": "", "saeure": "", "ausbau": "SS", "einkaufspreis": 12.9, "aktueller_wert": 13.0, "ratings": "", "ring": "", "trinkreife_start": "2025", "trinkreife_ende": "2026", "dekantierzeit": "", "notiz": "", "wertsteigerung_prozent": 0.7751937984496096, "wertsteigerung_absolut": 0.09999999999999964}, {"id": 97, "position": "Außenlager", "produzent": "Damjanic", "weinname": "Malvazija Istriana", "jahrgang": 2024, "traube": "100% MAL", "flaschengroesse": "0.75L", "alkohol": "12.5%", "restzucker": "", "saeure": "", "ausbau": "SS", "einkaufspreis": 12.9, "aktueller_wert": 13.0, "ratings": "", "ring": "", "trinkreife_start": "2025", "trinkreife_ende": "2026", "dekantierzeit": "", "notiz": "", "wertsteigerung_prozent": 0.7751937984496096, "wertsteigerung_absolut": 0.09999999999999964}, {"id": 98, "position": "Außenlager", "produzent": "Damjanic", "weinname": "Malvazija Istriana", "jahrgang": 2024, "traube": "100% MAL", "flaschengroesse": "0.75L", "alkohol": "12.5%", "restzucker": "", "saeure": "", "ausbau": "SS", "einkaufspreis": 12.9, "aktueller_wert": 13.0, "ratings": "", "ring": "", "trinkreife_start": "2025", "trinkreife_ende": "2026", "dekantierzeit": "", "notiz": "", "wertsteigerung_prozent": 0.7751937984496096, "wertsteigerung_absolut": 0.09999999999999964}, {"id": 99, "position": "Außenlager", "produzent": "Damjanic", "weinname": "Malvazija Istriana", "jahrgang": 2024, "traube": "100% MAL", "flaschengroesse": "0.75L", "alkohol": "12.5%", "restzucker": "", "saeure": "", "ausbau": "SS", "einkaufspreis": 12.9, "aktueller_wert": 13.0, "ratings": "", "ring": "", "trinkreife_start": "2025", "trinkreife_ende": "2026", "dekantierzeit": "", "notiz": "", "wertsteigerung_prozent": 0.7751937984496096, "wertsteigerung_absolut": 0.09999999999999964}, {"id": 100, "position": "Außenlager", "produzent": "Domaine Montlobre", "weinname": "La Chapelle Fronsac AOC", "jahrgang": 2023, "traube": "ME/CS", "flaschengroesse": "0.75L", "alkohol": "14.0%", "restzucker": "", "saeure": "", "ausbau": "Barrique", "einkaufspreis": 9.7, "aktueller_wert": 16.0, "ratings": "FS:91|AWC:Gold", "ring": "", "trinkreife_start": "2025", "trinkreife_ende": "2035", "dekantierzeit": "", "notiz": "", "wertsteigerung_prozent": 64.94845360824743, "wertsteigerung_absolut": 6.300000000000001}, {"id": 101, "position": "Außenlager", "produzent": "Domaine Montlobre", "weinname": "La Chapelle Fronsac AOC", "jahrgang": 2023, "traube": "ME/CS", "flaschengroesse": "0.75L", "alkohol": "14.0%", "restzucker": "", "saeure": "", "ausbau": "Barrique", "einkaufspreis": 9.7, "aktueller_wert": 16.0, "ratings": "FS:91|AWC:Gold", "ring": "", "trinkreife_start": "2025", "trinkreife_ende": "2035", "dekantierzeit": "", "notiz": "", "wertsteigerung_prozent": 64.94845360824743, "wertsteigerung_absolut": 6.300000000000001}, {"id": 102, "position": "Außenlager", "produzent": "Domaine Montlobre", "weinname": "La Chapelle Fronsac AOC", "jahrgang": 2023, "traube": "ME/CS", "flaschengroesse": "0.75L", "alkohol": "14.0%", "restzucker": "", "saeure": "", "ausbau": "Barrique", "einkaufspreis": 9.7, "aktueller_wert": 16.0, "ratings": "FS:91|AWC:Gold", "ring": "", "trinkreife_start": "2025", "trinkreife_ende": "2035", "dekantierzeit": "", "notiz": "", "wertsteigerung_prozent": 64.94845360824743, "wertsteigerung_absolut": 6.300000000000001}, {"id": 103, "position": "Außenlager", "produzent": "Domaine Montlobre", "weinname": "La Chapelle Fronsac AOC", "jahrgang": 2023, "traube": "ME/CS", "flaschengroesse": "0.75L", "alkohol": "14.0%", "restzucker": "", "saeure": "", "ausbau": "Barrique", "einkaufspreis": 9.7, "aktueller_wert": 16.0, "ratings": "FS:91|AWC:Gold", "ring": "", "trinkreife_start": "2025", "trinkreife_ende": "2035", "dekantierzeit": "", "notiz": "", "wertsteigerung_prozent": 64.94845360824743, "wertsteigerung_absolut": 6.300000000000001}, {"id": 104, "position": "Außenlager", "produzent": "Domaine Montlobre", "weinname": "La Chapelle Fronsac AOC", "jahrgang": 2023, "traube": "ME/CS", "flaschengroesse": "0.75L", "alkohol": "14.0%", "restzucker": "", "saeure": "", "ausbau": "Barrique", "einkaufspreis": 9.7, "aktueller_wert": 16.0, "ratings": "FS:91|AWC:Gold", "ring": "", "trinkreife_start": "2025", "trinkreife_ende": "2035", "dekantierzeit": "", "notiz": "", "wertsteigerung_prozent": 64.94845360824743, "wertsteigerung_absolut": 6.300000000000001}, {"id": 105, "position": "Außenlager", "produzent": "Schwarz", "weinname": "Butcher White", "jahrgang": 2023, "traube": "GV/WR/SB", "flaschengroesse": "0.75L", "alkohol": "12.5%", "restzucker": "3.5", "saeure": "5.8", "ausbau": "SS", "einkaufspreis": 8.16, "aktueller_wert": 12.0, "ratings": "FS:90|AWC:Gold", "ring": "Rosa", "trinkreife_start": "2024", "trinkreife_ende": "2026", "dekantierzeit": "", "notiz": "", "wertsteigerung_prozent": 47.05882352941176, "wertsteigerung_absolut": 3.84}, {"id": 106, "position": "Außenlager", "produzent": "Schwarz", "weinname": "Butcher White", "jahrgang": 2023, "traube": "GV/WR/SB", "flaschengroesse": "0.75L", "alkohol": "12.5%", "restzucker": "3.5", "saeure": "5.8", "ausbau": "SS", "einkaufspreis": 8.16, "aktueller_wert": 12.0, "ratings": "FS:90|AWC:Gold", "ring": "Rosa", "trinkreife_start": "2024", "trinkreife_ende": "2026", "dekantierzeit": "", "notiz": "", "wertsteigerung_prozent": 47.05882352941176, "wertsteigerung_absolut": 3.84}, {"id": 107, "position": "Außenlager", "produzent": "Polz", "weinname": "Steiermark Spiegel", "jahrgang": 2024, "traube": "SB/RI/MT", "flaschengroesse": "0.75L", "alkohol": "12.5%", "restzucker": "1.2", "saeure": "", "ausbau": "SS", "einkaufspreis": 11.4, "aktueller_wert": 15.0, "ratings": "FS:91|AWC:Gold", "ring": "Rosa", "trinkreife_start": "2025", "trinkreife_ende": "2026", "dekantierzeit": "", "notiz": "", "wertsteigerung_prozent": 31.57894736842105, "wertsteigerung_absolut": 3.5999999999999996}, {"id": 108, "position": "Außenlager", "produzent": "Masser", "weinname": "Massimo", "jahrgang": 2024, "traube": "Cuvée", "flaschengroesse": "0.75L", "alkohol": "13.0%", "restzucker": "1.0", "saeure": "", "ausbau": "SS", "einkaufspreis": 10.2, "aktueller_wert": 14.0, "ratings": "FS:91|AWC:Gold", "ring": "Rosa", "trinkreife_start": "2025", "trinkreife_ende": "2026", "dekantierzeit": "", "notiz": "", "wertsteigerung_prozent": 37.25490196078432, "wertsteigerung_absolut": 3.8000000000000007}, {"id": 109, "position": "Außenlager", "produzent": "Fritsch", "weinname": "Grüner Veltliner Kirchberg", "jahrgang": 2023, "traube": "100% GV", "flaschengroesse": "0.75L", "alkohol": "12.5%", "restzucker": "", "saeure": "", "ausbau": "SS", "einkaufspreis": 11.0, "aktueller_wert": 16.0, "ratings": "FS:93", "ring": "", "trinkreife_start": "2024", "trinkreife_ende": "2030", "dekantierzeit": "", "notiz": "", "wertsteigerung_prozent": 45.45454545454545, "wertsteigerung_absolut": 5.0}, {"id": 110, "position": "Außenlager", "produzent": "Pferschy-Seper", "weinname": "Ohne Limit", "jahrgang": null, "traube": "", "flaschengroesse": "0.75L", "alkohol": "0.0%", "restzucker": "", "saeure": "7.1", "ausbau": "Alkoholfrei", "einkaufspreis": 9.54, "aktueller_wert": 12.0, "ratings": "", "ring": "", "trinkreife_start": "", "trinkreife_ende": "", "dekantierzeit": "", "notiz": "MHD 04/2028 | KORREKTUR: Wert 12€ ergänzt", "wertsteigerung_prozent": 25.78616352201259, "wertsteigerung_absolut": 2.460000000000001}, {"id": 8, "position": "B1", "produzent": "Salcheto", "weinname": "Vino Nobile di Montepulciano DOCG", "jahrgang": 2018, "traube": "SG/Can/Mam", "flaschengroesse": "0.75L", "alkohol": "13.5%", "restzucker": "1.0", "saeure": "", "ausbau": "18M Eiche", "einkaufspreis": 17.09, "aktueller_wert": 22.0, "ratings": "GR:3|FS:94|JS:92|Dec:92|WS:91", "ring": "", "trinkreife_start": "2021", "trinkreife_ende": "2031", "dekantierzeit": "", "notiz": "", "wertsteigerung_prozent": 28.730251609128143, "wertsteigerung_absolut": 4.91}, {"id": 9, "position": "B2", "produzent": "Badia a Coltibuono", "weinname": "Chianti Classico DOCG", "jahrgang": 2019, "traube": "SG/Can", "flaschengroesse": "0.75L", "alkohol": "13.5%", "restzucker": "", "saeure": "", "ausbau": "12M Holz", "einkaufspreis": 12.55, "aktueller_wert": 18.0, "ratings": "JS:92|V:91|Dec:91|WS:90", "ring": "", "trinkreife_start": "2022", "trinkreife_ende": "2030", "dekantierzeit": "", "notiz": "", "wertsteigerung_prozent": 43.42629482071712, "wertsteigerung_absolut": 5.449999999999999}, {"id": 10, "position": "B3", "produzent": "Badia a Coltibuono", "weinname": "Chianti Classico DOCG", "jahrgang": 2019, "traube": "SG/Can", "flaschengroesse": "0.75L", "alkohol": "13.5%", "restzucker": "", "saeure": "", "ausbau": "12M Holz", "einkaufspreis": 12.55, "aktueller_wert": 18.0, "ratings": "JS:92|V:91|Dec:91|WS:90", "ring": "", "trinkreife_start": "2022", "trinkreife_ende": "2030", "dekantierzeit": "", "notiz": "", "wertsteigerung_prozent": 43.42629482071712, "wertsteigerung_absolut": 5.449999999999999}, {"id": 11, "position": "B4", "produzent": "Fattoria del Cerro", "weinname": "Silìneo Vino Nobile di Montepulciano DOCG", "jahrgang": 2018, "traube": "100% SG", "flaschengroesse": "0.75L", "alkohol": "13.5%", "restzucker": "", "saeure": "", "ausbau": "Eiche", "einkaufspreis": 11.76, "aktueller_wert": 15.0, "ratings": "GR:3|JS:91|FS:91", "ring": "", "trinkreife_start": "2022", "trinkreife_ende": "2028", "dekantierzeit": "", "notiz": "", "wertsteigerung_prozent": 27.551020408163268, "wertsteigerung_absolut": 3.24}, {"id": 12, "position": "B5", "produzent": "Fattoria del Cerro", "weinname": "Silìneo Vino Nobile di Montepulciano DOCG", "jahrgang": 2018, "traube": "100% SG", "flaschengroesse": "0.75L", "alkohol": "13.5%", "restzucker": "", "saeure": "", "ausbau": "Eiche", "einkaufspreis": 11.76, "aktueller_wert": 15.0, "ratings": "GR:3|JS:91|FS:91", "ring": "", "trinkreife_start": "2022", "trinkreife_ende": "2028", "dekantierzeit": "", "notiz": "", "wertsteigerung_prozent": 27.551020408163268, "wertsteigerung_absolut": 3.24}, {"id": 13, "position": "B6", "produzent": "Borgo Salcetino", "weinname": "Chianti Classico DOCG", "jahrgang": 2014, "traube": "SG/Can", "flaschengroesse": "0.75L", "alkohol": "13.5%", "restzucker": "", "saeure": "", "ausbau": "12M Holz", "einkaufspreis": 8.95, "aktueller_wert": 18.0, "ratings": "GR:3|JS:90|FS:88", "ring": "Rosa", "trinkreife_start": "2017", "trinkreife_ende": "2024", "dekantierzeit": "", "notiz": "KORREKTUR: Ende 2026→2024 - JETZT trinken!", "wertsteigerung_prozent": 101.1173184357542, "wertsteigerung_absolut": 9.05}, {"id": 14, "position": "B7", "produzent": "Salcheto", "weinname": "Rosso di Montepulciano DOC", "jahrgang": 2019, "traube": "SG/Can", "flaschengroesse": "0.75L", "alkohol": "13.5%", "restzucker": "", "saeure": "", "ausbau": "SS/Holz", "einkaufspreis": 9.78, "aktueller_wert": 15.0, "ratings": "JS:91|FS:90|WS:89", "ring": "Grün", "trinkreife_start": "2021", "trinkreife_ende": "2027", "dekantierzeit": "", "notiz": "", "wertsteigerung_prozent": 53.37423312883437, "wertsteigerung_absolut": 5.220000000000001}, {"id": 15, "position": "C1", "produzent": "Salcheto", "weinname": "Rosso di Montepulciano DOC", "jahrgang": 2019, "traube": "SG/Can", "flaschengroesse": "0.75L", "alkohol": "13.5%", "restzucker": "", "saeure": "", "ausbau": "SS/Holz", "einkaufspreis": 9.78, "aktueller_wert": 15.0, "ratings": "JS:91|FS:90|WS:89", "ring": "Grün", "trinkreife_start": "2021", "trinkreife_ende": "2027", "dekantierzeit": "", "notiz": "", "wertsteigerung_prozent": 53.37423312883437, "wertsteigerung_absolut": 5.220000000000001}, {"id": 16, "position": "C2", "produzent": "Montebuena", "weinname": "Rioja Reserva DOCa", "jahrgang": 2015, "traube": "100% TEM", "flaschengroesse": "0.75L", "alkohol": "13.5%", "restzucker": "", "saeure": "", "ausbau": "12M Eiche", "einkaufspreis": 12.34, "aktueller_wert": 16.0, "ratings": "V:91|JS:90", "ring": "", "trinkreife_start": "2021", "trinkreife_ende": "2030", "dekantierzeit": "", "notiz": "", "wertsteigerung_prozent": 29.659643435980556, "wertsteigerung_absolut": 3.66}, {"id": 17, "position": "C3", "produzent": "Rey del Sol", "weinname": "Rioja Reserva DOCa", "jahrgang": 2017, "traube": "100% TEM", "flaschengroesse": "0.75L", "alkohol": "13.5%", "restzucker": "", "saeure": "", "ausbau": "Holz", "einkaufspreis": 16.0, "aktueller_wert": 15.0, "ratings": "", "ring": "", "trinkreife_start": "2021", "trinkreife_ende": "2028", "dekantierzeit": "", "notiz": "", "wertsteigerung_prozent": -6.25, "wertsteigerung_absolut": -1.0}, {"id": 18, "position": "C4", "produzent": "Château Belgrave", "weinname": "Haut-Médoc Grand Cru Classé", "jahrgang": 2010, "traube": "CS/ME/CF/PV", "flaschengroesse": "0.75L", "alkohol": "14.0%", "restzucker": "", "saeure": "", "ausbau": "15M Barrique", "einkaufspreis": 21.57, "aktueller_wert": 48.0, "ratings": "JS:93|RP:89|WS:91|Dec:91|FS:92", "ring": "Grün", "trinkreife_start": "2018", "trinkreife_ende": "2027", "dekantierzeit": "JETZT PEAK! Sofort trinken (Weihnachten/Geburtstag)", "notiz": "KORREKTUR: RP 91→89; WS 93→91; Ende 2028→2027", "wertsteigerung_prozent": 122.53129346314324, "wertsteigerung_absolut": 26.43}, {"id": 19, "position": "C5", "produzent": "Château Belgrave", "weinname": "Haut-Médoc Grand Cru Classé", "jahrgang": 2010, "traube": "CS/ME/CF/PV", "flaschengroesse": "0.75L", "alkohol": "14.0%", "restzucker": "", "saeure": "", "ausbau": "15M Barrique", "einkaufspreis": 21.57, "aktueller_wert": 48.0, "ratings": "JS:93|RP:89|WS:91|Dec:91|FS:92", "ring": "Grün", "trinkreife_start": "2018", "trinkreife_ende": "2027", "dekantierzeit": "Bis Herbst 2026 trinken - PEAK!", "notiz": "KORREKTUR: RP 91→89; WS 93→91; Ende 2028→2027", "wertsteigerung_prozent": 122.53129346314324, "wertsteigerung_absolut": 26.43}, {"id": 20, "position": "C6", "produzent": "Château Les Trois Croix", "weinname": "Fronsac AOC", "jahrgang": 2019, "traube": "ME/CF", "flaschengroesse": "0.75L", "alkohol": "14.5%", "restzucker": "", "saeure": "", "ausbau": "Barrique", "einkaufspreis": 25.0, "aktueller_wert": 32.0, "ratings": "FS:92|JS:93|Dec:92|RP:91", "ring": "", "trinkreife_start": "2024", "trinkreife_ende": "2040", "dekantierzeit": "", "notiz": "", "wertsteigerung_prozent": 28.000000000000004, "wertsteigerung_absolut": 7.0}, {"id": 21, "position": "C7", "produzent": "Château Rezac", "weinname": "Bordeaux AOC", "jahrgang": 2016, "traube": "ME/CS", "flaschengroesse": "0.75L", "alkohol": "13.5%", "restzucker": "", "saeure": "", "ausbau": "", "einkaufspreis": 18.0, "aktueller_wert": 14.0, "ratings": "", "ring": "Grün", "trinkreife_start": "2021", "trinkreife_ende": "2027", "dekantierzeit": "", "notiz": "KORREKTUR: Wert 22→14€", "wertsteigerung_prozent": -22.22222222222222, "wertsteigerung_absolut": -4.0}, {"id": 22, "position": "D1", "produzent": "Domaine Montlobre", "weinname": "La Chapelle Fronsac AOC", "jahrgang": 2023, "traube": "", "flaschengroesse": "1.5L (Magnum)", "alkohol": "14.0%", "restzucker": "", "saeure": "", "ausbau": "", "einkaufspreis": 18.9, "aktueller_wert": 35.0, "ratings": "", "ring": "", "trinkreife_start": "2025", "trinkreife_ende": "2035", "dekantierzeit": "", "notiz": "", "wertsteigerung_prozent": 85.18518518518519, "wertsteigerung_absolut": 16.1}, {"id": 23, "position": "D2", "produzent": "Waberer", "weinname": "Si Belle No 6", "jahrgang": 2021, "traube": "BF/ZW/ME", "flaschengroesse": "0.75L", "alkohol": "13.5%", "restzucker": "", "saeure": "", "ausbau": "", "einkaufspreis": 12.0, "aktueller_wert": 12.0, "ratings": "", "ring": "", "trinkreife_start": "", "trinkreife_ende": "", "dekantierzeit": "", "notiz": "Geschenk", "wertsteigerung_prozent": 0.0, "wertsteigerung_absolut": 0.0}, {"id": 24, "position": "D3", "produzent": "Fritsch", "weinname": "Foggathal No 19", "jahrgang": 2011, "traube": "ZW/CS", "flaschengroesse": "0.75L", "alkohol": "13.5%", "restzucker": "", "saeure": "", "ausbau": "Holz", "einkaufspreis": 21.59, "aktueller_wert": 28.0, "ratings": "FS:92", "ring": "Grün", "trinkreife_start": "2021", "trinkreife_ende": "2025", "dekantierzeit": "", "notiz": "KORREKTUR: Ende 2027→2025 - JETZT trinken!", "wertsteigerung_prozent": 29.68967114404817, "wertsteigerung_absolut": 6.41}, {"id": 25, "position": "D4", "produzent": "Heinrich", "weinname": "Terra Burgenland DAC", "jahrgang": 2015, "traube": "BF/CS/ME", "flaschengroesse": "0.75L", "alkohol": "13.5%", "restzucker": "1.0", "saeure": "5.8", "ausbau": "Holz", "einkaufspreis": 26.91, "aktueller_wert": 35.0, "ratings": "FS:93", "ring": "Rosa", "trinkreife_start": "2020", "trinkreife_ende": "2025", "dekantierzeit": "", "notiz": "KORREKTUR: Ende 2026→2025 - JETZT trinken! ohne Limit", "wertsteigerung_prozent": 30.063173541434413, "wertsteigerung_absolut": 8.09}, {"id": 26, "position": "D5", "produzent": "Kollwentz", "weinname": "Steinzeiler", "jahrgang": 2018, "traube": "BF/CS/ZW", "flaschengroesse": "0.75L", "alkohol": "14.0%", "restzucker": "1.0", "saeure": "5.9", "ausbau": "24M Barrique", "einkaufspreis": 53.84, "aktueller_wert": 80.0, "ratings": "FS:98|JS:96|G&M:19|V:95|Dec:96|AWC:Gold", "ring": "Blau", "trinkreife_start": "2024", "trinkreife_ende": "2045", "dekantierzeit": "", "notiz": "", "wertsteigerung_prozent": 48.58841010401188, "wertsteigerung_absolut": 26.159999999999997}, {"id": 27, "position": "D6", "produzent": "Markowitsch", "weinname": "Rosenberg", "jahrgang": 2019, "traube": "ME/BF/ZW", "flaschengroesse": "0.75L", "alkohol": "14.2%", "restzucker": "1.0", "saeure": "5.3", "ausbau": "20M Barrique", "einkaufspreis": 32.5, "aktueller_wert": 40.0, "ratings": "FS:95|JS:94|G&M:18|Dec:93|V:92|Vinaria:5*", "ring": "Blau", "trinkreife_start": "2023", "trinkreife_ende": "2040", "dekantierzeit": "", "notiz": "KORREKTUR: FS 97→95; RP:92 gelöscht (nicht verifizierbar)", "wertsteigerung_prozent": 23.076923076923077, "wertsteigerung_absolut": 7.5}, {"id": 28, "position": "D7", "produzent": "Nittnaus", "weinname": "Comondor", "jahrgang": 2015, "traube": "ME/BF", "flaschengroesse": "0.75L", "alkohol": "14.0%", "restzucker": "1.2", "saeure": "5.4", "ausbau": "18M Barrique", "einkaufspreis": 42.42, "aktueller_wert": 103.0, "ratings": "FS:96", "ring": "Blau", "trinkreife_start": "2021", "trinkreife_ende": "2035", "dekantierzeit": "", "notiz": "KORREKTUR: Wert 75→103€ (unterschätzt - Preis gestiegen!)", "wertsteigerung_prozent": 142.80999528524282, "wertsteigerung_absolut": 60.58}, {"id": 139, "position": "Datum", "produzent": "Position", "weinname": "Produzent", "jahrgang": null, "traube": "Jahrgang", "flaschengroesse": "Notizen", "alkohol": "Bewertung", "restzucker": null, "saeure": null, "ausbau": null, "einkaufspreis": 0.0, "aktueller_wert": 0.0, "ratings": null, "ring": null, "trinkreife_start": null, "trinkreife_ende": null, "dekantierzeit": null, "notiz": null, "wertsteigerung_prozent": 0.0, "wertsteigerung_absolut": 0.0}, {"id": 29, "position": "E1", "produzent": "Nittnaus", "weinname": "Comondor", "jahrgang": 2017, "traube": "", "flaschengroesse": "0.75L", "alkohol": "14.0%", "restzucker": "", "saeure": "", "ausbau": "", "einkaufspreis": 44.0, "aktueller_wert": 55.0, "ratings": "FS:96", "ring": "", "trinkreife_start": "2025", "trinkreife_ende": "2035", "dekantierzeit": "", "notiz": "KORREKTUR: FS 95→96", "wertsteigerung_prozent": 25.0, "wertsteigerung_absolut": 11.0}, {"id": 30, "position": "E2", "produzent": "Nittnaus", "weinname": "Comondor", "jahrgang": 2018, "traube": "", "flaschengroesse": "0.75L", "alkohol": "14.0%", "restzucker": "", "saeure": "", "ausbau": "", "einkaufspreis": 45.48, "aktueller_wert": 55.0, "ratings": "FS:96", "ring": "", "trinkreife_start": "2026", "trinkreife_ende": "2038", "dekantierzeit": "", "notiz": "", "wertsteigerung_prozent": 20.932277924362367, "wertsteigerung_absolut": 9.520000000000003}, {"id": 31, "position": "E3", "produzent": "Nittnaus", "weinname": "Comondor", "jahrgang": 2018, "traube": "ME/BF/CS", "flaschengroesse": "0.75L", "alkohol": "14.0%", "restzucker": "1.2", "saeure": "5.4", "ausbau": "Barrique", "einkaufspreis": 26.0, "aktueller_wert": 52.0, "ratings": "FS:96", "ring": "Blau", "trinkreife_start": "2023", "trinkreife_ende": "2038", "dekantierzeit": "", "notiz": "", "wertsteigerung_prozent": 100.0, "wertsteigerung_absolut": 26.0}, {"id": 32, "position": "E4", "produzent": "Pöckl", "weinname": "Admiral", "jahrgang": 2015, "traube": "ZW/ME/CS", "flaschengroesse": "0.75L", "alkohol": "14.0%", "restzucker": "1.0", "saeure": "5.1", "ausbau": "18M Barrique", "einkaufspreis": 36.55, "aktueller_wert": 55.0, "ratings": "FS:96", "ring": "Grün", "trinkreife_start": "2025", "trinkreife_ende": "2040", "dekantierzeit": "", "notiz": "KORREKTUR: FS 94→96 | Ring Rosa→Grün (2027 trinken)", "wertsteigerung_prozent": 50.478796169630655, "wertsteigerung_absolut": 18.450000000000003}, {"id": 33, "position": "E5", "produzent": "Pöckl", "weinname": "Admiral", "jahrgang": 2019, "traube": "ZW/ME/CS", "flaschengroesse": "0.75L", "alkohol": "14.5%", "restzucker": "1.5", "saeure": "5.1", "ausbau": "18M Barrique", "einkaufspreis": 39.92, "aktueller_wert": 55.0, "ratings": "FS:96", "ring": "", "trinkreife_start": "2029", "trinkreife_ende": "2042", "dekantierzeit": "", "notiz": "KORREKTUR: FS 95+→96 | Ring entfernt (Start erst 2029)", "wertsteigerung_prozent": 37.7755511022044, "wertsteigerung_absolut": 15.079999999999998}, {"id": 34, "position": "E6", "produzent": "Pöckl", "weinname": "Admiral", "jahrgang": 2020, "traube": "ZW/ME/CS", "flaschengroesse": "0.75L", "alkohol": "14.5%", "restzucker": "2.6", "saeure": "5.6", "ausbau": "18M Barrique", "einkaufspreis": 41.3, "aktueller_wert": 55.0, "ratings": "FS:96+", "ring": "", "trinkreife_start": "2030", "trinkreife_ende": "2043", "dekantierzeit": "", "notiz": "Ring entfernt (Start erst 2030)", "wertsteigerung_prozent": 33.17191283292979, "wertsteigerung_absolut": 13.700000000000003}, {"id": 35, "position": "E7", "produzent": "Josef & Carmen Tesch", "weinname": "Blaufränkisch Selection", "jahrgang": 2017, "traube": "", "flaschengroesse": "0.75L", "alkohol": "13.5%", "restzucker": "", "saeure": "", "ausbau": "", "einkaufspreis": 10.44, "aktueller_wert": 23.0, "ratings": "FS:94", "ring": "", "trinkreife_start": "2025", "trinkreife_ende": "2032", "dekantierzeit": "", "notiz": "KORREKTUR: Wert 23€ + FS:94 ergänzt", "wertsteigerung_prozent": 120.3065134099617, "wertsteigerung_absolut": 12.56}, {"id": 36, "position": "F1", "produzent": "Josef & Carmen Tesch", "weinname": "Jana Paulina", "jahrgang": 2021, "traube": "ME/CS", "flaschengroesse": "0.75L", "alkohol": "14.5%", "restzucker": "", "saeure": "", "ausbau": "Barrique", "einkaufspreis": 20.95, "aktueller_wert": 37.0, "ratings": "ALC:94+", "ring": "Blau", "trinkreife_start": "2024", "trinkreife_ende": "2040", "dekantierzeit": "", "notiz": "KORREKTUR: Produzent Gut Oggau→Josef & Carmen Tesch | Für Paulina", "wertsteigerung_prozent": 76.6109785202864, "wertsteigerung_absolut": 16.05}, {"id": 37, "position": "F2", "produzent": "Josef & Carmen Tesch", "weinname": "Titan", "jahrgang": 2018, "traube": "100% BF", "flaschengroesse": "0.75L", "alkohol": "14.0%", "restzucker": "1.2", "saeure": "", "ausbau": "28M Barrique", "einkaufspreis": 31.12, "aktueller_wert": 50.0, "ratings": "FS:96|AWC:Gold|ALC:95", "ring": "Blau", "trinkreife_start": "2024", "trinkreife_ende": "2045", "dekantierzeit": "", "notiz": "", "wertsteigerung_prozent": 60.66838046272493, "wertsteigerung_absolut": 18.88}, {"id": 38, "position": "F3", "produzent": "Triebaumer", "weinname": "Gmärk", "jahrgang": 2018, "traube": "", "flaschengroesse": "0.75L", "alkohol": "13.5%", "restzucker": "", "saeure": "", "ausbau": "", "einkaufspreis": 13.5, "aktueller_wert": 19.0, "ratings": "FS:92", "ring": "", "trinkreife_start": "2025", "trinkreife_ende": "2030", "dekantierzeit": "", "notiz": "KORREKTUR: Wert 19€ ergänzt", "wertsteigerung_prozent": 40.74074074074074, "wertsteigerung_absolut": 5.5}, {"id": 39, "position": "F4", "produzent": "Triebaumer", "weinname": "Maulwurf", "jahrgang": 2018, "traube": "BF/ME/CS", "flaschengroesse": "0.75L", "alkohol": "14.0%", "restzucker": "1.0", "saeure": "", "ausbau": "20M Holz", "einkaufspreis": 20.0, "aktueller_wert": 35.0, "ratings": "FS:95|ALC:94", "ring": "", "trinkreife_start": "2023", "trinkreife_ende": "2035", "dekantierzeit": "", "notiz": "", "wertsteigerung_prozent": 75.0, "wertsteigerung_absolut": 15.0}, {"id": 40, "position": "F5", "produzent": "Franc Arman", "weinname": "Malvazija Classic", "jahrgang": 2021, "traube": "", "flaschengroesse": "0.75L", "alkohol": "12.5%", "restzucker": "", "saeure": "", "ausbau": "", "einkaufspreis": 13.2, "aktueller_wert": 15.0, "ratings": "", "ring": "Rosa", "trinkreife_start": "2024", "trinkreife_ende": "2026", "dekantierzeit": "", "notiz": "KORREKTUR: Wert 15€ ergänzt", "wertsteigerung_prozent": 13.636363636363644, "wertsteigerung_absolut": 1.8000000000000007}, {"id": 41, "position": "F6", "produzent": "Franc Arman", "weinname": "Malvazija Istarska", "jahrgang": 2023, "traube": "", "flaschengroesse": "0.75L", "alkohol": "12.5%", "restzucker": "", "saeure": "", "ausbau": "", "einkaufspreis": 9.1, "aktueller_wert": 12.0, "ratings": "", "ring": "", "trinkreife_start": "", "trinkreife_ende": "2024", "dekantierzeit": "2026", "notiz": "", "wertsteigerung_prozent": 31.868131868131872, "wertsteigerung_absolut": 2.9000000000000004}, {"id": 42, "position": "F7", "produzent": "Damjanic", "weinname": "Malvazija Istarska", "jahrgang": 2024, "traube": "100% MAL", "flaschengroesse": "0.75L", "alkohol": "12.5%", "restzucker": "2.0", "saeure": "5.5", "ausbau": "SS", "einkaufspreis": 12.9, "aktueller_wert": 13.0, "ratings": "", "ring": "Rosa", "trinkreife_start": "2025", "trinkreife_ende": "2027", "dekantierzeit": "", "notiz": "", "wertsteigerung_prozent": 0.7751937984496096, "wertsteigerung_absolut": 0.09999999999999964}, {"id": 43, "position": "G1", "produzent": "Clos du Caillon", "weinname": "Bordeaux Supérieur AOC", "jahrgang": 2021, "traube": "", "flaschengroesse": "0.75L", "alkohol": "14.0%", "restzucker": "", "saeure": "", "ausbau": "", "einkaufspreis": 7.89, "aktueller_wert": 18.0, "ratings": "91 RP", "ring": "", "trinkreife_start": "2024", "trinkreife_ende": "2028", "dekantierzeit": "", "notiz": "", "wertsteigerung_prozent": 128.13688212927755, "wertsteigerung_absolut": 10.11}, {"id": 44, "position": "G2", "produzent": "Aigner", "weinname": "Grüner Veltliner Sandgrube", "jahrgang": 2022, "traube": "", "flaschengroesse": "0.75L", "alkohol": "12.5%", "restzucker": "", "saeure": "", "ausbau": "", "einkaufspreis": 9.2, "aktueller_wert": 10.0, "ratings": "FS:92", "ring": "Grün", "trinkreife_start": "2023", "trinkreife_ende": "2027", "dekantierzeit": "", "notiz": "KORREKTUR: Wert 10€ ergänzt", "wertsteigerung_prozent": 8.695652173913052, "wertsteigerung_absolut": 0.8000000000000007}, {"id": 45, "position": "G3", "produzent": "Aigner", "weinname": "Grüner Veltliner Privat", "jahrgang": 2021, "traube": "100% GV", "flaschengroesse": "0.75L", "alkohol": "14.0%", "restzucker": "", "saeure": "", "ausbau": "Holz", "einkaufspreis": 15.7, "aktueller_wert": 35.0, "ratings": "FS:95", "ring": "", "trinkreife_start": "2023", "trinkreife_ende": "2032", "dekantierzeit": "", "notiz": "", "wertsteigerung_prozent": 122.9299363057325, "wertsteigerung_absolut": 19.3}, {"id": 46, "position": "G4", "produzent": "Dockner", "weinname": "Grüner Veltliner Ried Oberfeld", "jahrgang": 2022, "traube": "", "flaschengroesse": "0.75L", "alkohol": "13.0%", "restzucker": "2.5", "saeure": "5.7", "ausbau": "Holzfass", "einkaufspreis": 8.35, "aktueller_wert": 11.0, "ratings": "FS:91|JS:93", "ring": "Grün", "trinkreife_start": "2024", "trinkreife_ende": "2027", "dekantierzeit": "", "notiz": "", "wertsteigerung_prozent": 31.73652694610779, "wertsteigerung_absolut": 2.6500000000000004}, {"id": 47, "position": "G5", "produzent": "Soligo", "weinname": "Pinot Grigio DOC", "jahrgang": 2023, "traube": "", "flaschengroesse": "0.75L", "alkohol": "12.5%", "restzucker": "", "saeure": "", "ausbau": "", "einkaufspreis": 6.4, "aktueller_wert": 8.0, "ratings": "", "ring": "Rosa", "trinkreife_start": "2024", "trinkreife_ende": "2026", "dekantierzeit": "", "notiz": "", "wertsteigerung_prozent": 24.999999999999993, "wertsteigerung_absolut": 1.5999999999999996}, {"id": 48, "position": "G6", "produzent": "Schröck", "weinname": "Weißburgunder", "jahrgang": 2023, "traube": "", "flaschengroesse": "0.75L", "alkohol": "13.0%", "restzucker": "2.1", "saeure": "5.1", "ausbau": "SS", "einkaufspreis": 10.0, "aktueller_wert": 15.0, "ratings": "FS:91", "ring": "", "trinkreife_start": "2024", "trinkreife_ende": "2030", "dekantierzeit": "", "notiz": "", "wertsteigerung_prozent": 50.0, "wertsteigerung_absolut": 5.0}, {"id": 49, "position": "G7", "produzent": "Fritsch", "weinname": "Grüner Veltliner Kirchberg", "jahrgang": 2023, "traube": "100% GV", "flaschengroesse": "0.75L", "alkohol": "12.5%", "restzucker": "", "saeure": "", "ausbau": "SS", "einkaufspreis": 11.0, "aktueller_wert": 16.0, "ratings": "FS:93", "ring": "", "trinkreife_start": "2024", "trinkreife_ende": "2030", "dekantierzeit": "", "notiz": "", "wertsteigerung_prozent": 45.45454545454545, "wertsteigerung_absolut": 5.0}, {"id": 50, "position": "H1", "produzent": "Domaine Montlobre", "weinname": "Tête de Cuvée Blanc", "jahrgang": 2024, "traube": "", "flaschengroesse": "0.75L", "alkohol": "13.0%", "restzucker": "2.4", "saeure": "5.2", "ausbau": "SS/Holz", "einkaufspreis": 8.0, "aktueller_wert": 14.0, "ratings": "FS:91", "ring": "", "trinkreife_start": "2025", "trinkreife_ende": "2028", "dekantierzeit": "", "notiz": "", "wertsteigerung_prozent": 75.0, "wertsteigerung_absolut": 6.0}, {"id": 51, "position": "H2", "produzent": "Pferschy-Seper", "weinname": "Grüner Veltliner Kabinett", "jahrgang": 2023, "traube": "", "flaschengroesse": "0.75L", "alkohol": "13.5%", "restzucker": "1.7", "saeure": "", "ausbau": "SS", "einkaufspreis": 7.56, "aktueller_wert": 12.0, "ratings": "", "ring": "Rosa", "trinkreife_start": "2024", "trinkreife_ende": "2026", "dekantierzeit": "", "notiz": "", "wertsteigerung_prozent": 58.73015873015874, "wertsteigerung_absolut": 4.44}, {"id": 52, "position": "H3", "produzent": "Auer", "weinname": "Rotgipfler", "jahrgang": 2024, "traube": "", "flaschengroesse": "0.75L", "alkohol": "13.0%", "restzucker": "3.8", "saeure": "5.8", "ausbau": "SS", "einkaufspreis": 8.9, "aktueller_wert": 13.0, "ratings": "FS:92", "ring": "", "trinkreife_start": "2025", "trinkreife_ende": "2031", "dekantierzeit": "", "notiz": "", "wertsteigerung_prozent": 46.067415730337075, "wertsteigerung_absolut": 4.1}, {"id": 53, "position": "H4", "produzent": "Auer", "weinname": "Tradition Gumpoldskirchner", "jahrgang": 2023, "traube": "RG/ZI", "flaschengroesse": "0.75L", "alkohol": "13.5%", "restzucker": "4.4", "saeure": "", "ausbau": "Holz/Tank", "einkaufspreis": 12.7, "aktueller_wert": 20.0, "ratings": "FS:92", "ring": "", "trinkreife_start": "2024", "trinkreife_ende": "2031", "dekantierzeit": "", "notiz": "", "wertsteigerung_prozent": 57.48031496062993, "wertsteigerung_absolut": 7.300000000000001}, {"id": 54, "position": "H5", "produzent": "Szigeti", "weinname": "Furmint on the Rocks", "jahrgang": 2023, "traube": "100% FUR", "flaschengroesse": "0.75L", "alkohol": "13.0%", "restzucker": "", "saeure": "", "ausbau": "Hefe", "einkaufspreis": 13.5, "aktueller_wert": 25.0, "ratings": "FS:93", "ring": "", "trinkreife_start": "2024", "trinkreife_ende": "2033", "dekantierzeit": "", "notiz": "", "wertsteigerung_prozent": 85.18518518518519, "wertsteigerung_absolut": 11.5}, {"id": 55, "position": "H6", "produzent": "Gross", "weinname": "Mitzi Gelber Muskateller", "jahrgang": 2024, "traube": "Gelber Muskateller", "flaschengroesse": "0.75L", "alkohol": "12.0%", "restzucker": "2.4", "saeure": "5.1", "ausbau": "SS", "einkaufspreis": 13.32, "aktueller_wert": 15.0, "ratings": "FS:90", "ring": "Rosa", "trinkreife_start": "2024", "trinkreife_ende": "2026", "dekantierzeit": "", "notiz": "", "wertsteigerung_prozent": 12.612612612612612, "wertsteigerung_absolut": 1.6799999999999997}, {"id": 56, "position": "H7", "produzent": "Primus", "weinname": "Gelber Muskateller", "jahrgang": 2024, "traube": "Gelber Muskateller", "flaschengroesse": "0.75L", "alkohol": "12.5%", "restzucker": "2.2", "saeure": "5.8", "ausbau": "SS", "einkaufspreis": 11.0, "aktueller_wert": 14.0, "ratings": "FS:91", "ring": "Rosa", "trinkreife_start": "2024", "trinkreife_ende": "2026", "dekantierzeit": "", "notiz": "", "wertsteigerung_prozent": 27.27272727272727, "wertsteigerung_absolut": 3.0}, {"id": 57, "position": "I1", "produzent": "Aigner", "weinname": "Grüner Veltliner Ried Sandgrube", "jahrgang": 2022, "traube": "", "flaschengroesse": "0.75L", "alkohol": "12.5%", "restzucker": "2.0", "saeure": "5.5", "ausbau": "SS", "einkaufspreis": 12.7, "aktueller_wert": 14.0, "ratings": "FS:92", "ring": "Grün", "trinkreife_start": "2024", "trinkreife_ende": "2027", "dekantierzeit": "", "notiz": "", "wertsteigerung_prozent": 10.236220472440952, "wertsteigerung_absolut": 1.3000000000000007}, {"id": 58, "position": "I2", "produzent": "Wachter-Wiesler", "weinname": "Handgemenge", "jahrgang": 2022, "traube": "", "flaschengroesse": "0.75L", "alkohol": "13.5%", "restzucker": "1.0", "saeure": "6.7", "ausbau": "SS", "einkaufspreis": 9.54, "aktueller_wert": 12.0, "ratings": "", "ring": "Grün", "trinkreife_start": "2023", "trinkreife_ende": "2028", "dekantierzeit": "", "notiz": "", "wertsteigerung_prozent": 25.78616352201259, "wertsteigerung_absolut": 2.460000000000001}, {"id": 59, "position": "I3", "produzent": "Pferschy-Seper", "weinname": "Weißburgunder Ried Himmelsstiege", "jahrgang": 2022, "traube": "", "flaschengroesse": "0.75L", "alkohol": "12.5%", "restzucker": "3.5", "saeure": "5.8", "ausbau": "SS", "einkaufspreis": 7.82, "aktueller_wert": 10.0, "ratings": "", "ring": "", "trinkreife_start": "2023", "trinkreife_ende": "2027", "dekantierzeit": "", "notiz": "", "wertsteigerung_prozent": 27.8772378516624, "wertsteigerung_absolut": 2.1799999999999997}, {"id": 60, "position": "I4", "produzent": "Pferschy-Seper", "weinname": "Gumpoldskirchner DAC", "jahrgang": 2023, "traube": "", "flaschengroesse": "0.75L", "alkohol": "14.0%", "restzucker": "1.2", "saeure": "", "ausbau": "SS/Holz", "einkaufspreis": 11.52, "aktueller_wert": 18.0, "ratings": "", "ring": "", "trinkreife_start": "2024", "trinkreife_ende": "2036", "dekantierzeit": "", "notiz": "", "wertsteigerung_prozent": 56.250000000000014, "wertsteigerung_absolut": 6.48}, {"id": 61, "position": "I5", "produzent": "Pferschy-Seper", "weinname": "Rotgipfler Rasslerin", "jahrgang": 2022, "traube": "100% RG", "flaschengroesse": "0.75L", "alkohol": "13.5%", "restzucker": "3.0", "saeure": "", "ausbau": "Wien.Holz", "einkaufspreis": 11.52, "aktueller_wert": 18.0, "ratings": "", "ring": "", "trinkreife_start": "2023", "trinkreife_ende": "2037", "dekantierzeit": "", "notiz": "", "wertsteigerung_prozent": 56.250000000000014, "wertsteigerung_absolut": 6.48}, {"id": 62, "position": "I6", "produzent": "Pferschy-Seper", "weinname": "Weißburgunder Reserve Ried Haberln", "jahrgang": 2020, "traube": "100% WB", "flaschengroesse": "0.75L", "alkohol": "13.0%", "restzucker": "3.4", "saeure": "", "ausbau": "Holz", "einkaufspreis": 17.82, "aktueller_wert": 35.0, "ratings": "FS:92+|AWC:Gold", "ring": "Blau", "trinkreife_start": "2023", "trinkreife_ende": "2038", "dekantierzeit": "", "notiz": "", "wertsteigerung_prozent": 96.40852974186306, "wertsteigerung_absolut": 17.18}, {"id": 63, "position": "I7", "produzent": "Domaine Montlobre", "weinname": "La Chapelle", "jahrgang": 2008, "traube": "", "flaschengroesse": "0.75L", "alkohol": "13.5%", "restzucker": "", "saeure": "", "ausbau": "", "einkaufspreis": 8.64, "aktueller_wert": 20.0, "ratings": "", "ring": "Rosa", "trinkreife_start": "JETZT", "trinkreife_ende": "SOFORT", "dekantierzeit": "", "notiz": "KORREKTUR: Peak verpasst (2010-2020) - SOFORT trinken!", "wertsteigerung_prozent": 131.48148148148147, "wertsteigerung_absolut": 11.36}, {"id": 64, "position": "J1", "produzent": "Domaine Montlobre", "weinname": "La Chapelle Fronsac AOC", "jahrgang": 2009, "traube": "ME-Bl", "flaschengroesse": "0.75L", "alkohol": "14.0%", "restzucker": "", "saeure": "", "ausbau": "Barrique", "einkaufspreis": 8.64, "aktueller_wert": 25.0, "ratings": "FS:90", "ring": "Rosa", "trinkreife_start": "JETZT", "trinkreife_ende": "SOFORT", "dekantierzeit": "", "notiz": "KORREKTUR: Peak verpasst (2011-2021) - SOFORT trinken!", "wertsteigerung_prozent": 189.35185185185185, "wertsteigerung_absolut": 16.36}, {"id": 65, "position": "J2", "produzent": "Domaine Montlobre", "weinname": "La Chapelle Fronsac AOC", "jahrgang": 2010, "traube": "ME-Bl", "flaschengroesse": "0.75L", "alkohol": "14.0%", "restzucker": "", "saeure": "", "ausbau": "Barrique", "einkaufspreis": 8.83, "aktueller_wert": 25.0, "ratings": "FS:91", "ring": "Rosa", "trinkreife_start": "JETZT", "trinkreife_ende": "SOFORT", "dekantierzeit": "", "notiz": "KORREKTUR: Peak verpasst (2012-2022) - SOFORT trinken!", "wertsteigerung_prozent": 183.12570781426956, "wertsteigerung_absolut": 16.17}, {"id": 66, "position": "J3", "produzent": "Domaine Montlobre", "weinname": "La Chapelle Fronsac AOC", "jahrgang": 2011, "traube": "ME-Bl", "flaschengroesse": "0.75L", "alkohol": "14.0%", "restzucker": "", "saeure": "", "ausbau": "Barrique", "einkaufspreis": 8.7, "aktueller_wert": 25.0, "ratings": "FS:90", "ring": "Rosa", "trinkreife_start": "JETZT", "trinkreife_ende": "SOFORT", "dekantierzeit": "", "notiz": "KORREKTUR: Peak verpasst (2013-2023) - SOFORT trinken!", "wertsteigerung_prozent": 187.3563218390805, "wertsteigerung_absolut": 16.3}, {"id": 67, "position": "J4", "produzent": "Domaine Montlobre", "weinname": "La Chapelle Fronsac AOC", "jahrgang": 2013, "traube": "ME-Bl", "flaschengroesse": "0.75L", "alkohol": "14.0%", "restzucker": "", "saeure": "", "ausbau": "Barrique", "einkaufspreis": 8.7, "aktueller_wert": 28.0, "ratings": "FS:91", "ring": "Rosa", "trinkreife_start": "JETZT", "trinkreife_ende": "SOFORT", "dekantierzeit": "", "notiz": "KORREKTUR: Peak verpasst (2015-2023) - SOFORT trinken!", "wertsteigerung_prozent": 221.83908045977012, "wertsteigerung_absolut": 19.3}, {"id": 68, "position": "J5", "produzent": "Domaine Montlobre", "weinname": "La Chapelle Fronsac AOC", "jahrgang": 2014, "traube": "ME-Bl", "flaschengroesse": "0.75L", "alkohol": "14.0%", "restzucker": "", "saeure": "", "ausbau": "Barrique", "einkaufspreis": 9.0, "aktueller_wert": 28.0, "ratings": "FS:91", "ring": "Grün", "trinkreife_start": "2024", "trinkreife_ende": "2027", "dekantierzeit": "", "notiz": "", "wertsteigerung_prozent": 211.11111111111111, "wertsteigerung_absolut": 19.0}, {"id": 69, "position": "J6", "produzent": "Domaine Montlobre", "weinname": "La Chapelle Fronsac AOC", "jahrgang": 2014, "traube": "ME-Bl", "flaschengroesse": "0.75L", "alkohol": "14.0%", "restzucker": "", "saeure": "", "ausbau": "Barrique", "einkaufspreis": 9.0, "aktueller_wert": 30.0, "ratings": "FS:92", "ring": "Grün", "trinkreife_start": "2024", "trinkreife_ende": "2027", "dekantierzeit": "", "notiz": "", "wertsteigerung_prozent": 233.33333333333334, "wertsteigerung_absolut": 21.0}, {"id": 70, "position": "J7", "produzent": "Domaine Montlobre", "weinname": "La Chapelle Fronsac AOC", "jahrgang": 2015, "traube": "ME-Bl", "flaschengroesse": "0.75L", "alkohol": "14.0%", "restzucker": "", "saeure": "", "ausbau": "Barrique", "einkaufspreis": 9.5, "aktueller_wert": 30.0, "ratings": "FS:91", "ring": "", "trinkreife_start": "2024", "trinkreife_ende": "2030", "dekantierzeit": "", "notiz": "", "wertsteigerung_prozent": 215.78947368421052, "wertsteigerung_absolut": 20.5}, {"id": 71, "position": "K1", "produzent": "Domaine Montlobre", "weinname": "La Chapelle Fronsac AOC", "jahrgang": 2015, "traube": "ME-Bl", "flaschengroesse": "0.75L", "alkohol": "14.0%", "restzucker": "", "saeure": "", "ausbau": "Barrique", "einkaufspreis": 9.5, "aktueller_wert": 32.0, "ratings": "FS:92", "ring": "Grün", "trinkreife_start": "2024", "trinkreife_ende": "2027", "dekantierzeit": "", "notiz": "", "wertsteigerung_prozent": 236.84210526315786, "wertsteigerung_absolut": 22.5}, {"id": 72, "position": "K2", "produzent": "Domaine Montlobre", "weinname": "La Chapelle Fronsac AOC", "jahrgang": 2016, "traube": "ME-Bl", "flaschengroesse": "0.75L", "alkohol": "14.0%", "restzucker": "", "saeure": "", "ausbau": "Barrique", "einkaufspreis": 10.03, "aktueller_wert": 32.0, "ratings": "FS:92", "ring": "", "trinkreife_start": "2024", "trinkreife_ende": "2032", "dekantierzeit": "", "notiz": "", "wertsteigerung_prozent": 219.04287138584246, "wertsteigerung_absolut": 21.97}, {"id": 73, "position": "K3", "produzent": "Domaine Montlobre", "weinname": "La Chapelle Fronsac AOC", "jahrgang": 2016, "traube": "ME-Bl", "flaschengroesse": "0.75L", "alkohol": "14.0%", "restzucker": "", "saeure": "", "ausbau": "Barrique", "einkaufspreis": 10.03, "aktueller_wert": 35.0, "ratings": "FS:93", "ring": "", "trinkreife_start": "2025", "trinkreife_ende": "2034", "dekantierzeit": "", "notiz": "", "wertsteigerung_prozent": 248.95314057826522, "wertsteigerung_absolut": 24.97}, {"id": 74, "position": "K4", "produzent": "Domaine Montlobre", "weinname": "La Chapelle Fronsac AOC", "jahrgang": 2017, "traube": "ME-Bl", "flaschengroesse": "0.75L", "alkohol": "14.0%", "restzucker": "", "saeure": "", "ausbau": "Barrique", "einkaufspreis": 10.19, "aktueller_wert": 35.0, "ratings": "FS:92", "ring": "", "trinkreife_start": "2026", "trinkreife_ende": "2035", "dekantierzeit": "", "notiz": "", "wertsteigerung_prozent": 243.47399411187442, "wertsteigerung_absolut": 24.810000000000002}, {"id": 75, "position": "K5", "produzent": "Domaine Montlobre", "weinname": "La Chapelle Fronsac AOC", "jahrgang": 2017, "traube": "ME-Bl", "flaschengroesse": "0.75L", "alkohol": "14.0%", "restzucker": "", "saeure": "", "ausbau": "Barrique", "einkaufspreis": 10.19, "aktueller_wert": 35.0, "ratings": "FS:92", "ring": "", "trinkreife_start": "2027", "trinkreife_ende": "2035", "dekantierzeit": "", "notiz": "", "wertsteigerung_prozent": 243.47399411187442, "wertsteigerung_absolut": 24.810000000000002}, {"id": 76, "position": "K6", "produzent": "Domaine Montlobre", "weinname": "La Chapelle Fronsac AOC", "jahrgang": 2019, "traube": "ME-Bl", "flaschengroesse": "0.75L", "alkohol": "14.0%", "restzucker": "", "saeure": "", "ausbau": "Barrique", "einkaufspreis": 10.7, "aktueller_wert": 35.0, "ratings": "FS:93", "ring": "", "trinkreife_start": "2028", "trinkreife_ende": "2035", "dekantierzeit": "", "notiz": "", "wertsteigerung_prozent": 227.10280373831776, "wertsteigerung_absolut": 24.3}, {"id": 77, "position": "K7", "produzent": "Domaine Montlobre", "weinname": "La Chapelle Fronsac AOC", "jahrgang": 2019, "traube": "ME-Bl", "flaschengroesse": "0.75L", "alkohol": "14.0%", "restzucker": "", "saeure": "", "ausbau": "Barrique", "einkaufspreis": 10.7, "aktueller_wert": 35.0, "ratings": "FS:93", "ring": "", "trinkreife_start": "2025", "trinkreife_ende": "2034", "dekantierzeit": "", "notiz": "", "wertsteigerung_prozent": 227.10280373831776, "wertsteigerung_absolut": 24.3}, {"id": 78, "position": "L1", "produzent": "Château Megyer", "weinname": "Tokaji Aszú 3 Puttonyos", "jahrgang": 2005, "traube": "FU/HA/MU", "flaschengroesse": "0.75L", "alkohol": "11.5%", "restzucker": "105", "saeure": "8.0", "ausbau": "Eiche", "einkaufspreis": 8.08, "aktueller_wert": 50.0, "ratings": "JS:91", "ring": "Grün", "trinkreife_start": "2015", "trinkreife_ende": "2035", "dekantierzeit": "", "notiz": "", "wertsteigerung_prozent": 518.8118811881188, "wertsteigerung_absolut": 41.92}, {"id": 79, "position": "L2", "produzent": "Château Megyer", "weinname": "Tokaj Furmint Late Harvest", "jahrgang": 2008, "traube": "100% FU", "flaschengroesse": "0.75L", "alkohol": "11.0%", "restzucker": "85", "saeure": "", "ausbau": "Holz", "einkaufspreis": 5.69, "aktueller_wert": 35.0, "ratings": "WS:90", "ring": "", "trinkreife_start": "2018", "trinkreife_ende": "2024", "dekantierzeit": "", "notiz": "KORREKTUR: Ende 2028→2024 - JETZT trinken!", "wertsteigerung_prozent": 515.1142355008787, "wertsteigerung_absolut": 29.31}, {"id": 80, "position": "L3", "produzent": "Nittnaus", "weinname": "Trockenbeerenauslese Premium", "jahrgang": 2005, "traube": "CH/WB", "flaschengroesse": "0.75L", "alkohol": "8.5%", "restzucker": "270", "saeure": "", "ausbau": "Barrique", "einkaufspreis": 9.99, "aktueller_wert": 60.0, "ratings": "PP:94", "ring": "Blau", "trinkreife_start": "2015", "trinkreife_ende": "2045", "dekantierzeit": "", "notiz": "", "wertsteigerung_prozent": 500.60060060060056, "wertsteigerung_absolut": 50.01}, {"id": 81, "position": "L4", "produzent": "Azienda Agricola Santo Stefano", "weinname": "Passium Vendemmia Tardiva", "jahrgang": 2005, "traube": "ALE/SG", "flaschengroesse": "0.75L", "alkohol": "13.0%", "restzucker": "130", "saeure": "", "ausbau": "Barrique", "einkaufspreis": 0.0, "aktueller_wert": 30.0, "ratings": "GR:2", "ring": "Blau", "trinkreife_start": "2015", "trinkreife_ende": "2020", "dekantierzeit": "", "notiz": "KORREKTUR: Wert 55→30€; Ende 2035→2020; PEAK VERPASST!", "wertsteigerung_prozent": 0.0, "wertsteigerung_absolut": 0.0}, {"id": 82, "position": "L6", "produzent": "Hetfürtös", "weinname": "Tokaji Aszú 5 Puttonyos", "jahrgang": 2001, "traube": "FU/HA", "flaschengroesse": "0.75L", "alkohol": "11.5%", "restzucker": "145", "saeure": "8.0", "ausbau": "Eiche", "einkaufspreis": 0.0, "aktueller_wert": 65.0, "ratings": "CT:91.5", "ring": "Grün", "trinkreife_start": "2011", "trinkreife_ende": "2041", "dekantierzeit": "", "notiz": "", "wertsteigerung_prozent": 0.0, "wertsteigerung_absolut": 0.0}, {"id": 83, "position": "L7", "produzent": "Ebner-Ebenauer", "weinname": "L'Autrichienne Brut Nature", "jahrgang": 2017, "traube": "ZW/WR", "flaschengroesse": "0.75L", "alkohol": "12.5%", "restzucker": "1", "saeure": "", "ausbau": "Barrique", "einkaufspreis": 0.0, "aktueller_wert": 60.0, "ratings": "RP:93|ALC:93+", "ring": "Blau", "trinkreife_start": "2024", "trinkreife_ende": "2035", "dekantierzeit": "", "notiz": "KORREKTUR: Wert 70→60€; 6 Jahre Hefelager", "wertsteigerung_prozent": 0.0, "wertsteigerung_absolut": 0.0}, {"id": 111, "position": "LIEFERUNG", "produzent": "Tenuta San Giorgio", "weinname": "Brunello di Montalcino Ugolforte DOCG", "jahrgang": 2019, "traube": "100% SG", "flaschengroesse": "0.75L", "alkohol": "13.5%", "restzucker": "1.2", "saeure": "5.9", "ausbau": "30M Eiche", "einkaufspreis": 43.48, "aktueller_wert": 48.0, "ratings": "GR:2|WS:95|JS:94|V:94|WE:94|Dec:93|FS:93|JR:17++", "ring": "Blau", "trinkreife_start": "2026", "trinkreife_ende": "2044", "dekantierzeit": "", "notiz": "BIO | Schwesterweingut Poggio di Sotto", "wertsteigerung_prozent": 10.395584176632942, "wertsteigerung_absolut": 4.520000000000003}, {"id": 112, "position": "LIEFERUNG", "produzent": "Tenuta San Giorgio", "weinname": "Brunello di Montalcino Ugolforte DOCG", "jahrgang": 2019, "traube": "100% SG", "flaschengroesse": "0.75L", "alkohol": "13.5%", "restzucker": "1.2", "saeure": "5.9", "ausbau": "30M Eiche", "einkaufspreis": 43.48, "aktueller_wert": 48.0, "ratings": "GR:2|WS:95|JS:94|V:94|WE:94|Dec:93|FS:93|JR:17++", "ring": "Blau", "trinkreife_start": "2026", "trinkreife_ende": "2044", "dekantierzeit": "", "notiz": "BIO | Schwesterweingut Poggio di Sotto", "wertsteigerung_prozent": 10.395584176632942, "wertsteigerung_absolut": 4.520000000000003}, {"id": 113, "position": "LIEFERUNG", "produzent": "Il Poggione", "weinname": "Brunello di Montalcino DOCG", "jahrgang": 2019, "traube": "100% SG", "flaschengroesse": "0.75L", "alkohol": "15.0%", "restzucker": "0.6", "saeure": "6.0", "ausbau": "36M Holz", "einkaufspreis": 44.47, "aktueller_wert": 55.0, "ratings": "GR:3|WS:94|JS:92|V:96|WE:95|Dec:94|FS:95|JR:17.5", "ring": "Blau", "trinkreife_start": "2029", "trinkreife_ende": "2045+", "dekantierzeit": "2-3h", "notiz": "Klassischer Kraftprotz | Lagerfähigkeit 2050", "wertsteigerung_prozent": 23.678884641331237, "wertsteigerung_absolut": 10.530000000000001}, {"id": 114, "position": "LIEFERUNG", "produzent": "Il Poggione", "weinname": "Brunello di Montalcino DOCG", "jahrgang": 2019, "traube": "100% SG", "flaschengroesse": "0.75L", "alkohol": "15.0%", "restzucker": "0.6", "saeure": "6.0", "ausbau": "36M Holz", "einkaufspreis": 44.47, "aktueller_wert": 55.0, "ratings": "GR:3|WS:94|JS:92|V:96|WE:95|Dec:94|FS:95|JR:17.5", "ring": "Blau", "trinkreife_start": "2029", "trinkreife_ende": "2045+", "dekantierzeit": "2-3h", "notiz": "Klassischer Kraftprotz | Lagerfähigkeit 2050", "wertsteigerung_prozent": 23.678884641331237, "wertsteigerung_absolut": 10.530000000000001}, {"id": 115, "position": "LIEFERUNG", "produzent": "Fèlsina", "weinname": "Rancia Chianti Classico Gran Selezione DOCG", "jahrgang": 2021, "traube": "100% SG", "flaschengroesse": "0.75L", "alkohol": "14.0%", "restzucker": "1.5", "saeure": "", "ausbau": "18M Barrique", "einkaufspreis": 42.49, "aktueller_wert": 45.0, "ratings": "GR:3|WS:95|JS:93|V:95+|WE:95|Dec:93|FS:94|JR:17+", "ring": "Blau", "trinkreife_start": "2027", "trinkreife_ende": "2040", "dekantierzeit": "2h", "notiz": "Einzellage Rancia | Gran Selezione seit 2021", "wertsteigerung_prozent": 5.907272299364552, "wertsteigerung_absolut": 2.509999999999998}, {"id": 116, "position": "LIEFERUNG", "produzent": "Poliziano", "weinname": "Asinone Nobile di Montepulciano DOCG", "jahrgang": 2021, "traube": "SG (Prugnolo)", "flaschengroesse": "0.75L", "alkohol": "14.5%", "restzucker": "1.0", "saeure": "", "ausbau": "24M Barrique", "einkaufspreis": 46.44, "aktueller_wert": 47.0, "ratings": "GR:3|WS:94|JS:94|V:94|WE:92|Dec:93|FS:95|JR:17", "ring": "Blau", "trinkreife_start": "2025", "trinkreife_ende": "2042", "dekantierzeit": "2h", "notiz": "BIO | Flaggschiff | Ertrag -20% (2021)", "wertsteigerung_prozent": 1.205857019810513, "wertsteigerung_absolut": 0.5600000000000023}, {"id": 117, "position": "LIEFERUNG", "produzent": "Tenuta delle Terre Nere", "weinname": "Etna Rosso DOC", "jahrgang": 2024, "traube": "NM/NC 98/2", "flaschengroesse": "0.75L", "alkohol": "14.5%", "restzucker": "1.0", "saeure": "", "ausbau": "Barrique/Holz", "einkaufspreis": 23.72, "aktueller_wert": 24.0, "ratings": "", "ring": "", "trinkreife_start": "2025", "trinkreife_ende": "2038", "dekantierzeit": "1h", "notiz": "BIO | Vulkanböden Ätna | Pinot Noir des Südens", "wertsteigerung_prozent": 1.1804384485666153, "wertsteigerung_absolut": 0.28000000000000114}, {"id": 118, "position": "LIEFERUNG", "produzent": "Badia a Coltibuono", "weinname": "Chianti Classico Riserva DOCG", "jahrgang": 2020, "traube": "SG/Can/Col", "flaschengroesse": "0.75L", "alkohol": "14.0%", "restzucker": "1.1", "saeure": "", "ausbau": "24M Holz", "einkaufspreis": 23.71, "aktueller_wert": 28.0, "ratings": "GR:2|WS:93|JS:92|V:94|WE:92|Dec:91|FS:92|JR:17", "ring": "", "trinkreife_start": "2024", "trinkreife_ende": "2033", "dekantierzeit": "1-2h", "notiz": "BIO | Upgrade zu B2/B3 | Ring entfernt (Lager bis 2033)", "wertsteigerung_prozent": 18.093631379164904, "wertsteigerung_absolut": 4.289999999999999}, {"id": 119, "position": "LIEFERUNG", "produzent": "Badia a Coltibuono", "weinname": "Chianti Classico Riserva DOCG", "jahrgang": 2020, "traube": "SG/Can/Col", "flaschengroesse": "0.75L", "alkohol": "14.0%", "restzucker": "1.1", "saeure": "", "ausbau": "24M Holz", "einkaufspreis": 23.71, "aktueller_wert": 28.0, "ratings": "GR:2|WS:93|JS:92|V:94|WE:92|Dec:91|FS:92|JR:17", "ring": "", "trinkreife_start": "2024", "trinkreife_ende": "2033", "dekantierzeit": "1-2h", "notiz": "BIO | Upgrade zu B2/B3 | Ring entfernt (Lager bis 2033)", "wertsteigerung_prozent": 18.093631379164904, "wertsteigerung_absolut": 4.289999999999999}, {"id": 120, "position": "LIEFERUNG", "produzent": "Franz Josef Gritsch", "weinname": "Riesling Ried Loibenberg Smaragd", "jahrgang": 2022, "traube": "100% RI", "flaschengroesse": "0.75L", "alkohol": "13.5%", "restzucker": "", "saeure": "", "ausbau": "Holzboden/Tank", "einkaufspreis": 19.95, "aktueller_wert": 39.9, "ratings": "FS:97|JS:96|V:94|Dec:95|AWC:Gold|JR:17.5", "ring": "Blau", "trinkreife_start": "2025", "trinkreife_ende": "2042", "dekantierzeit": "", "notiz": "Vinospirit -50% | Top-Lage Wachau | Enorme Dichte trotz warmem Jahr", "wertsteigerung_prozent": 100.0, "wertsteigerung_absolut": 19.95}, {"id": 121, "position": "LIEFERUNG", "produzent": "Josef & Carmen Tesch", "weinname": "Titan", "jahrgang": 2019, "traube": "BF/CS/ME", "flaschengroesse": "0.75L", "alkohol": "14.5%", "restzucker": "", "saeure": "", "ausbau": "30M Barrique", "einkaufspreis": 20.95, "aktueller_wert": 41.9, "ratings": "FS:96|JS:93|AWC:94|V:92", "ring": "Blau", "trinkreife_start": "2024", "trinkreife_ende": "2039", "dekantierzeit": "", "notiz": "Vinospirit -50% | Flaggschiff | Jahrhundertjahr 2019 | Vertikale zu 2018er (F2)", "wertsteigerung_prozent": 100.0, "wertsteigerung_absolut": 20.95}, {"id": 122, "position": "LIEFERUNG", "produzent": "Josef & Carmen Tesch", "weinname": "Jana Paulina", "jahrgang": 2021, "traube": "BF/ME", "flaschengroesse": "0.75L", "alkohol": "14.0%", "restzucker": "", "saeure": "", "ausbau": "Barrique", "einkaufspreis": 20.95, "aktueller_wert": 41.9, "ratings": "FS:95|JS:92|AWC:93", "ring": "Blau", "trinkreife_start": "2024", "trinkreife_ende": "2038", "dekantierzeit": "", "notiz": "Vinospirit -50% | Nachkauf zu F1 | Für Paulina", "wertsteigerung_prozent": 100.0, "wertsteigerung_absolut": 20.95}, {"id": 123, "position": "LIEFERUNG", "produzent": "Weingut Allram", "weinname": "Riesling Ried Heiligenstein 1.ÖTW", "jahrgang": 2021, "traube": "100% RI", "flaschengroesse": "0.75L", "alkohol": "13.0%", "restzucker": "", "saeure": "", "ausbau": "Tank/Hefe", "einkaufspreis": 21.5, "aktueller_wert": 43.0, "ratings": "FS:96|JS:95|Dec:94|AWC:Gold|V:94|JR:17", "ring": "Blau", "trinkreife_start": "2024", "trinkreife_ende": "2045", "dekantierzeit": "", "notiz": "Vinospirit -50% | Prestigelage Kamptal | Kühles Spitzenjahr 2021", "wertsteigerung_prozent": 100.0, "wertsteigerung_absolut": 21.5}, {"id": 124, "position": "LIEFERUNG", "produzent": "Franz Weninger", "weinname": "Blaufränkisch Ried Dürrau", "jahrgang": 2016, "traube": "100% BF", "flaschengroesse": "0.75L", "alkohol": "13.5%", "restzucker": "", "saeure": "", "ausbau": "500L Eiche", "einkaufspreis": 32.5, "aktueller_wert": 65.0, "ratings": "JS:95|FS:94+", "ring": "Blau", "trinkreife_start": "2025", "trinkreife_ende": "2050", "dekantierzeit": "", "notiz": "Vinospirit -50% | Grand Cru | Puristisch unfiltriert | Extremes Lagerpotential", "wertsteigerung_prozent": 100.0, "wertsteigerung_absolut": 32.5}, {"id": 125, "position": "LIEFERUNG", "produzent": "Château Cantemerle", "weinname": "Haut-Médoc Grand Cru Classé", "jahrgang": 2020, "traube": "CS/ME/CF/PV", "flaschengroesse": "0.75L", "alkohol": "13.5%", "restzucker": "1.0", "saeure": "", "ausbau": "12-16M Barrique", "einkaufspreis": 32.0, "aktueller_wert": 38.0, "ratings": "WS:88|JS:94|V:86|WE:93|Dec:93|FS:92|JR:16", "ring": "Blau", "trinkreife_start": "2026", "trinkreife_ende": "2050", "dekantierzeit": "2h", "notiz": "58% CS/29% ME/7% CF/6% PV - 40% neue Barriques", "wertsteigerung_prozent": 18.75, "wertsteigerung_absolut": 6.0}, {"id": 126, "position": "LIEFERUNG", "produzent": "Château Cantemerle", "weinname": "Haut-Médoc Grand Cru Classé", "jahrgang": 2020, "traube": "CS/ME/CF/PV", "flaschengroesse": "0.75L", "alkohol": "13.5%", "restzucker": "1.0", "saeure": "", "ausbau": "12-16M Barrique", "einkaufspreis": 32.0, "aktueller_wert": 38.0, "ratings": "WS:88|JS:94|V:86|WE:93|Dec:93|FS:92|JR:16", "ring": "Blau", "trinkreife_start": "2026", "trinkreife_ende": "2050", "dekantierzeit": "2h", "notiz": "58% CS/29% ME/7% CF/6% PV - 40% neue Barriques", "wertsteigerung_prozent": 18.75, "wertsteigerung_absolut": 6.0}, {"id": 127, "position": "LIEFERUNG", "produzent": "Château Cantemerle", "weinname": "Haut-Médoc Grand Cru Classé", "jahrgang": 2020, "traube": "CS/ME/CF/PV", "flaschengroesse": "0.75L", "alkohol": "13.5%", "restzucker": "1.0", "saeure": "", "ausbau": "12-16M Barrique", "einkaufspreis": 32.0, "aktueller_wert": 38.0, "ratings": "WS:88|JS:94|V:86|WE:93|Dec:93|FS:92|JR:16", "ring": "Blau", "trinkreife_start": "2026", "trinkreife_ende": "2050", "dekantierzeit": "2h", "notiz": "58% CS/29% ME/7% CF/6% PV - 40% neue Barriques", "wertsteigerung_prozent": 18.75, "wertsteigerung_absolut": 6.0}, {"id": 128, "position": "LIEFERUNG", "produzent": "Château Cantemerle", "weinname": "Haut-Médoc Grand Cru Classé", "jahrgang": 2020, "traube": "CS/ME/CF/PV", "flaschengroesse": "0.75L", "alkohol": "13.5%", "restzucker": "1.0", "saeure": "", "ausbau": "12-16M Barrique", "einkaufspreis": 32.0, "aktueller_wert": 38.0, "ratings": "WS:88|JS:94|V:86|WE:93|Dec:93|FS:92|JR:16", "ring": "Blau", "trinkreife_start": "2026", "trinkreife_ende": "2050", "dekantierzeit": "2h", "notiz": "58% CS/29% ME/7% CF/6% PV - 40% neue Barriques", "wertsteigerung_prozent": 18.75, "wertsteigerung_absolut": 6.0}, {"id": 129, "position": "LIEFERUNG", "produzent": "Château Cantemerle", "weinname": "Haut-Médoc Grand Cru Classé", "jahrgang": 2020, "traube": "CS/ME/CF/PV", "flaschengroesse": "0.75L", "alkohol": "13.5%", "restzucker": "1.0", "saeure": "", "ausbau": "12-16M Barrique", "einkaufspreis": 32.0, "aktueller_wert": 38.0, "ratings": "WS:88|JS:94|V:86|WE:93|Dec:93|FS:92|JR:16", "ring": "Blau", "trinkreife_start": "2026", "trinkreife_ende": "2050", "dekantierzeit": "2h", "notiz": "58% CS/29% ME/7% CF/6% PV - 40% neue Barriques", "wertsteigerung_prozent": 18.75, "wertsteigerung_absolut": 6.0}, {"id": 130, "position": "LIEFERUNG", "produzent": "Château Cantemerle", "weinname": "Haut-Médoc Grand Cru Classé", "jahrgang": 2020, "traube": "CS/ME/CF/PV", "flaschengroesse": "0.75L", "alkohol": "13.5%", "restzucker": "1.0", "saeure": "", "ausbau": "12-16M Barrique", "einkaufspreis": 32.0, "aktueller_wert": 38.0, "ratings": "WS:88|JS:94|V:86|WE:93|Dec:93|FS:92|JR:16", "ring": "Blau", "trinkreife_start": "2026", "trinkreife_ende": "2050", "dekantierzeit": "2h", "notiz": "58% CS/29% ME/7% CF/6% PV - 40% neue Barriques", "wertsteigerung_prozent": 18.75, "wertsteigerung_absolut": 6.0}, {"id": 131, "position": "LIEFERUNG", "produzent": "Château Carlmagnus", "weinname": "Fronsac AOC", "jahrgang": 2020, "traube": "100% ME", "flaschengroesse": "0.75L", "alkohol": "14.5%", "restzucker": "1.5", "saeure": "", "ausbau": "12-14M Barrique", "einkaufspreis": 17.17, "aktueller_wert": 22.0, "ratings": "JS:93|V:88|WE:92|Dec:91|FS:91|JR:15.5", "ring": "Blau", "trinkreife_start": "2024", "trinkreife_ende": "2035", "dekantierzeit": "2h", "notiz": "100% Merlot - sehr konzentriert", "wertsteigerung_prozent": 28.130460104834, "wertsteigerung_absolut": 4.829999999999998}, {"id": 132, "position": "LIEFERUNG", "produzent": "Château Carlmagnus", "weinname": "Fronsac AOC", "jahrgang": 2020, "traube": "100% ME", "flaschengroesse": "0.75L", "alkohol": "14.5%", "restzucker": "1.5", "saeure": "", "ausbau": "12-14M Barrique", "einkaufspreis": 17.17, "aktueller_wert": 22.0, "ratings": "JS:93|V:88|WE:92|Dec:91|FS:91|JR:15.5", "ring": "Blau", "trinkreife_start": "2024", "trinkreife_ende": "2035", "dekantierzeit": "2h", "notiz": "100% Merlot - sehr konzentriert", "wertsteigerung_prozent": 28.130460104834, "wertsteigerung_absolut": 4.829999999999998}, {"id": 133, "position": "LIEFERUNG", "produzent": "Château Carlmagnus", "weinname": "Fronsac AOC", "jahrgang": 2020, "traube": "100% ME", "flaschengroesse": "0.75L", "alkohol": "14.5%", "restzucker": "1.5", "saeure": "", "ausbau": "12-14M Barrique", "einkaufspreis": 17.17, "aktueller_wert": 22.0, "ratings": "JS:93|V:88|WE:92|Dec:91|FS:91|JR:15.5", "ring": "Blau", "trinkreife_start": "2024", "trinkreife_ende": "2035", "dekantierzeit": "2h", "notiz": "100% Merlot - sehr konzentriert", "wertsteigerung_prozent": 28.130460104834, "wertsteigerung_absolut": 4.829999999999998}, {"id": 134, "position": "LIEFERUNG", "produzent": "Château Carlmagnus", "weinname": "Fronsac AOC", "jahrgang": 2020, "traube": "100% ME", "flaschengroesse": "0.75L", "alkohol": "14.5%", "restzucker": "1.5", "saeure": "", "ausbau": "12-14M Barrique", "einkaufspreis": 17.17, "aktueller_wert": 22.0, "ratings": "JS:93|V:88|WE:92|Dec:91|FS:91|JR:15.5", "ring": "Blau", "trinkreife_start": "2024", "trinkreife_ende": "2035", "dekantierzeit": "2h", "notiz": "100% Merlot - sehr konzentriert", "wertsteigerung_prozent": 28.130460104834, "wertsteigerung_absolut": 4.829999999999998}, {"id": 135, "position": "LIEFERUNG", "produzent": "Château Carlmagnus", "weinname": "Fronsac AOC", "jahrgang": 2020, "traube": "100% ME", "flaschengroesse": "0.75L", "alkohol": "14.5%", "restzucker": "1.5", "saeure": "", "ausbau": "12-14M Barrique", "einkaufspreis": 17.17, "aktueller_wert": 22.0, "ratings": "JS:93|V:88|WE:92|Dec:91|FS:91|JR:15.5", "ring": "Blau", "trinkreife_start": "2024", "trinkreife_ende": "2035", "dekantierzeit": "2h", "notiz": "100% Merlot - sehr konzentriert", "wertsteigerung_prozent": 28.130460104834, "wertsteigerung_absolut": 4.829999999999998}, {"id": 136, "position": "LIEFERUNG", "produzent": "Château Carlmagnus", "weinname": "Fronsac AOC", "jahrgang": 2020, "traube": "100% ME", "flaschengroesse": "0.75L", "alkohol": "14.5%", "restzucker": "1.5", "saeure": "", "ausbau": "12-14M Barrique", "einkaufspreis": 17.17, "aktueller_wert": 22.0, "ratings": "JS:93|V:88|WE:92|Dec:91|FS:91|JR:15.5", "ring": "Blau", "trinkreife_start": "2024", "trinkreife_ende": "2035", "dekantierzeit": "2h", "notiz": "100% Merlot - sehr konzentriert", "wertsteigerung_prozent": 28.130460104834, "wertsteigerung_absolut": 4.829999999999998}, {"id": 137, "position": "LIEFERUNG", "produzent": "Château Capbern", "weinname": "Saint-Estèphe AOC", "jahrgang": 2023, "traube": "CS/ME/CF/PV", "flaschengroesse": "0.75L", "alkohol": "14.6%", "restzucker": "2.0", "saeure": "", "ausbau": "18M Barrique", "einkaufspreis": 26.7, "aktueller_wert": 28.0, "ratings": "WS:91-93|JS:94|V:91|Dec:92|FS:93|JR:16+", "ring": "Blau", "trinkreife_start": "2029", "trinkreife_ende": "2045", "dekantierzeit": "2h", "notiz": "69% CS/29% ME - Team Calon Ségur - 60% neue Barriques", "wertsteigerung_prozent": 4.868913857677906, "wertsteigerung_absolut": 1.3000000000000007}, {"id": 138, "position": "LIEFERUNG", "produzent": "Lacoste-Borie", "weinname": "Pauillac AOC", "jahrgang": 2020, "traube": "CS/ME/CF", "flaschengroesse": "0.75L", "alkohol": "13.5%", "restzucker": "1.0", "saeure": "", "ausbau": "15M Barrique", "einkaufspreis": 0.0, "aktueller_wert": 35.0, "ratings": "WS:88|JS:91|V:90|WE:91|Dec:91|FS:91|JR:16", "ring": "Blau", "trinkreife_start": "2024", "trinkreife_ende": "2038", "dekantierzeit": "2h", "notiz": "Zweitwein Grand-Puy-Lacoste - 56% CS/30% ME/14% CF - GESCHENK", "wertsteigerung_prozent": 0.0, "wertsteigerung_absolut": 0.0}];
+        
+        // Init
+        function init() {
+            // Versuche Daten aus localStorage zu laden
+            const saved = localStorage.getItem('weinkeller_wines');
+            if (saved) {
+                wines = JSON.parse(saved);
+            } else {
+                wines = sampleWines;
+                saveWines();
+            }
+            
+            updateStats();
+            renderWines();
+            
+            // Event Listeners
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+                    renderWines(tab.dataset.tab);
+                });
+            });
+            
+            document.getElementById('search').addEventListener('input', (e) => {
+                renderWines('alle', e.target.value);
+            });
+        }
+        
+        function saveWines() {
+            localStorage.setItem('weinkeller_wines', JSON.stringify(wines));
+        }
+        
+        function updateStats() {
+            const active = wines.filter(w => !w.position.includes('GETRUNKEN'));
+            const total_wert = active.reduce((sum, w) => sum + (w.aktueller_wert || 0), 0);
+            const total_ek = active.reduce((sum, w) => sum + (w.einkaufspreis || 0), 0);
+            const gewinn = total_wert - total_ek;
+            const perf = total_ek > 0 ? ((total_wert / total_ek - 1) * 100) : 0;
+            
+            document.getElementById('stat-flaschen').textContent = active.length;
+            document.getElementById('stat-wert').textContent = `€${Math.round(total_wert)}`;
+            document.getElementById('stat-perf').textContent = `+${Math.round(perf)}%`;
+            document.getElementById('stat-gewinn').textContent = `€${Math.round(gewinn)}`;
+            document.getElementById('subtitle').textContent = `${active.length} Flaschen · €${Math.round(total_wert)}`;
+        }
+        
+        function renderWines(filter = 'alle', search = '') {
+            let filtered = wines.filter(w => !w.position.includes('GETRUNKEN'));
+            
+            if (filter === 'rosa') filtered = filtered.filter(w => w.ring === 'Rosa');
+            if (filter === 'gruen') filtered = filtered.filter(w => w.ring === 'Grün');
+            if (filter === 'blau') filtered = filtered.filter(w => w.ring === 'Blau');
+            
+            if (search) {
+                const s = search.toLowerCase();
+                filtered = filtered.filter(w => 
+                    (w.produzent && w.produzent.toLowerCase().includes(s)) ||
+                    (w.weinname && w.weinname.toLowerCase().includes(s)) ||
+                    (w.position && w.position.toLowerCase().includes(s))
+                );
+            }
+            
+            const html = filtered.map(w => {
+                let ringHTML = '';
+                if (w.ring === 'Rosa') ringHTML = '<span class="ring ring-rosa">🌸</span>';
+                if (w.ring === 'Grün') ringHTML = '<span class="ring ring-gruen">🟢</span>';
+                if (w.ring === 'Blau') ringHTML = '<span class="ring ring-blau">🔵</span>';
+                
+                return `
+                    <div class="wine-card" onclick="showWineDetail(${w.id})">
+                        <div class="header-row">
+                            <div class="position">${w.position}</div>
+                            ${ringHTML}
+                        </div>
+                        <h3>${w.weinname}</h3>
+                        <div class="producer">${w.produzent} · ${w.jahrgang || 'n/a'}</div>
+                        <div class="details">
+                            <div><small>Wert:</small><br><strong>€${w.aktueller_wert?.toFixed(0) || 0}</strong></div>
+                            <div><small>Perf:</small><br><strong style="color: #28a745">+${w.wertsteigerung_prozent?.toFixed(0) || 0}%</strong></div>
+                            <div><small>Bis:</small><br><strong>${w.trinkreife_ende || '-'}</strong></div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            document.getElementById('wine-list').innerHTML = html || '<div style="text-align:center;padding:40px;color:white;">Keine Weine gefunden</div>';
+        }
+        
+        function showWineDetail(id) {
+            const wine = wines.find(w => w.id === id);
+            if (!wine) return;
+            
+            const html = `
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2>${wine.position}</h2>
+                        <button class="close-btn" onclick="closeModal()">×</button>
+                    </div>
+                    <h2>${wine.weinname}</h2>
+                    <p>${wine.produzent} · ${wine.jahrgang || 'n/a'}</p>
+                    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 15px; margin: 20px 0; text-align: center;">
+                        <div>€${wine.einkaufspreis?.toFixed(2)} → €${wine.aktueller_wert?.toFixed(2)}</div>
+                        <div style="font-size: 2em; margin: 10px 0;">+${wine.wertsteigerung_prozent?.toFixed(0)}%</div>
+                    </div>
+                    <button class="btn btn-danger" onclick="drinkWine(${wine.id})">🍷 Trinken</button>
+                    <button class="btn btn-secondary" onclick="closeModal()">Schließen</button>
+                </div>
+            `;
+            
+            document.getElementById('modal').innerHTML = html;
+            document.getElementById('modal').classList.add('active');
+        }
+        
+        function showDrinkDialog() {
+            const active = wines.filter(w => !w.position.includes('GETRUNKEN'));
+            const options = active.map(w => 
+                `<option value="${w.id}">${w.position} - ${w.produzent} ${w.weinname} (${w.jahrgang})</option>`
+            ).join('');
+            
+            const html = `
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2>🍷 Wein trinken</h2>
+                        <button class="close-btn" onclick="closeDrinkModal()">×</button>
+                    </div>
+                    <div class="form-group">
+                        <label>Wein auswählen</label>
+                        <select id="drink-wine-select">${options}</select>
+                    </div>
+                    <div class="form-group">
+                        <label>Bewertung (0-100)</label>
+                        <input type="number" id="drink-rating" min="0" max="100" placeholder="z.B. 92">
+                    </div>
+                    <div class="form-group">
+                        <label>Notiz</label>
+                        <textarea id="drink-note" placeholder="Wie war der Wein?"></textarea>
+                    </div>
+                    <button class="btn btn-primary" onclick="confirmDrink()">Getrunken!</button>
+                    <button class="btn btn-secondary" onclick="closeDrinkModal()">Abbrechen</button>
+                </div>
+            `;
+            
+            document.getElementById('drink-modal').innerHTML = html;
+            document.getElementById('drink-modal').classList.add('active');
+        }
+        
+        function drinkWine(id) {
+            if (!confirm('Wein als getrunken markieren?')) return;
+            
+            const wine = wines.find(w => w.id === id);
+            wine.position = 'GETRUNKEN_' + wine.position;
+            wine.notiz = (wine.notiz || '') + ` | GETRUNKEN am ${new Date().toLocaleDateString('de-DE')}`;
+            
+            saveWines();
+            updateStats();
+            renderWines();
+            closeModal();
+            
+            alert('✅ Wein als getrunken markiert!');
+        }
+        
+        function confirmDrink() {
+            const id = parseInt(document.getElementById('drink-wine-select').value);
+            const rating = document.getElementById('drink-rating').value;
+            const note = document.getElementById('drink-note').value;
+            
+            const wine = wines.find(w => w.id === id);
+            wine.position = 'GETRUNKEN_' + wine.position;
+            
+            let verkostung = `GETRUNKEN am ${new Date().toLocaleDateString('de-DE')}`;
+            if (rating) verkostung += ` | Bewertung: ${rating}/100`;
+            if (note) verkostung += ` | ${note}`;
+            
+            wine.notiz = (wine.notiz || '') + ' | ' + verkostung;
+            
+            saveWines();
+            updateStats();
+            renderWines();
+            closeDrinkModal();
+            
+            alert(`✅ ${wine.weinname} als getrunken markiert!`);
+        }
+        
+        function closeModal() {
+            document.getElementById('modal').classList.remove('active');
+        }
+        
+        function closeDrinkModal() {
+            document.getElementById('drink-modal').classList.remove('active');
+        }
+        
+        function exportDB() {
+            // Erstelle CSV-Export
+            const csv = wines.map(w => 
+                `${w.position},${w.produzent},${w.weinname},${w.jahrgang},${w.ring || ''},${w.aktueller_wert},${w.einkaufspreis},${w.wertsteigerung_prozent}`
+            ).join('\n');
+            
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `weinkeller_export_${new Date().toISOString().split('T')[0]}.csv`;
+            a.click();
+            
+            alert('✅ Daten exportiert! Diese CSV kannst du auf dem PC wieder in die DB importieren.');
+        }
+        
+        // Click outside modal to close
+        document.getElementById('modal').addEventListener('click', (e) => {
+            if (e.target.id === 'modal') closeModal();
+        });
+        
+        document.getElementById('drink-modal').addEventListener('click', (e) => {
+            if (e.target.id === 'drink-modal') closeDrinkModal();
+        });
+        
+        // Start app
+        init();
+    </script>
+</body>
+</html>
