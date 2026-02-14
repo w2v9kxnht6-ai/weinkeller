@@ -383,9 +383,10 @@
 
         <div class="export-section">
             <h3>💾 Datenbank exportieren</h3>
-            <button class="btn btn-primary" onclick="exportDB()">Download weinkeller.db</button>
+            <button class="btn btn-primary" onclick="exportDB()">Download CSV</button>
+            <button class="btn btn-danger" onclick="resetDB()" style="margin-top: 10px;">🔄 Daten zurücksetzen</button>
             <p style="margin-top: 10px; font-size: 0.9em; color: #666;">
-                Speichere deine Änderungen permanent!
+                Zurücksetzen lädt alle 139 Originalweine neu!
             </p>
         </div>
     </div>
@@ -623,6 +624,13 @@
         document.getElementById('drink-modal').addEventListener('click', (e) => {
             if (e.target.id === 'drink-modal') closeDrinkModal();
         });
+        
+
+        function resetDB() {
+            if (!confirm('Alle Änderungen verwerfen und 139 Originalweine neu laden?')) return;
+            localStorage.removeItem('weinkeller_wines');
+            location.reload();
+        }
         
         // Start app
         init();
