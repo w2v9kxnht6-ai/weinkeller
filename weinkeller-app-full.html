@@ -501,18 +501,74 @@
             const wine = wines.find(w => w.id === id);
             if (!wine) return;
             
+            let ringHTML = '';
+            if (wine.ring === 'Rosa') ringHTML = '<span class="ring ring-rosa">🌸 Rosa (2026)</span>';
+            if (wine.ring === 'Grün') ringHTML = '<span class="ring ring-gruen">🟢 Grün (2027)</span>';
+            if (wine.ring === 'Blau') ringHTML = '<span class="ring ring-blau">🔵 Blau (Highlight)</span>';
+            
             const html = `
                 <div class="modal-content">
                     <div class="modal-header">
                         <h2>${wine.position}</h2>
                         <button class="close-btn" onclick="closeModal()">×</button>
                     </div>
-                    <h2>${wine.weinname}</h2>
-                    <p>${wine.produzent} · ${wine.jahrgang || 'n/a'}</p>
-                    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 15px; margin: 20px 0; text-align: center;">
-                        <div>€${wine.einkaufspreis?.toFixed(2)} → €${wine.aktueller_wert?.toFixed(2)}</div>
-                        <div style="font-size: 2em; margin: 10px 0;">+${wine.wertsteigerung_prozent?.toFixed(0)}%</div>
+                    
+                    ${ringHTML}
+                    
+                    <h2 style="margin: 15px 0 5px;">${wine.weinname}</h2>
+                    <p style="color: #666; margin-bottom: 20px;">${wine.produzent} · ${wine.jahrgang || 'n/a'}</p>
+                    
+                    <div style="display: grid; gap: 12px; margin: 20px 0;">
+                        <div style="background: #f8f9fa; padding: 12px; border-radius: 8px;">
+                            <div style="font-size: 0.85em; color: #666;">🍇 Traube</div>
+                            <div style="font-weight: bold;">${wine.traube || 'n/a'}</div>
+                        </div>
+                        <div style="background: #f8f9fa; padding: 12px; border-radius: 8px;">
+                            <div style="font-size: 0.85em; color: #666;">🍾 Größe / Alkohol</div>
+                            <div style="font-weight: bold;">${wine.flaschengroesse || 'n/a'} · ${wine.alkohol || 'n/a'}</div>
+                        </div>
+                        <div style="background: #f8f9fa; padding: 12px; border-radius: 8px;">
+                            <div style="font-size: 0.85em; color: #666;">🪵 Ausbau</div>
+                            <div style="font-weight: bold;">${wine.ausbau || 'n/a'}</div>
+                        </div>
+                        <div style="background: #f8f9fa; padding: 12px; border-radius: 8px;">
+                            <div style="font-size: 0.85em; color: #666;">📅 Trinkreife</div>
+                            <div style="font-weight: bold;">${wine.trinkreife_start || '-'} bis ${wine.trinkreife_ende || '-'}</div>
+                        </div>
+                        ${wine.dekantierzeit ? `
+                        <div style="background: #f8f9fa; padding: 12px; border-radius: 8px;">
+                            <div style="font-size: 0.85em; color: #666;">🕐 Dekantieren</div>
+                            <div style="font-weight: bold;">${wine.dekantierzeit}</div>
+                        </div>
+                        ` : ''}
+                        ${wine.restzucker || wine.saeure ? `
+                        <div style="background: #f8f9fa; padding: 12px; border-radius: 8px;">
+                            <div style="font-size: 0.85em; color: #666;">🔬 Analytik</div>
+                            <div style="font-weight: bold;">RZ: ${wine.restzucker || '-'} g/l · Säure: ${wine.saeure || '-'} g/l</div>
+                        </div>
+                        ` : ''}
                     </div>
+                    
+                    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 15px; margin: 20px 0; text-align: center;">
+                        <div style="opacity: 0.9;">Einkaufspreis → Aktueller Wert</div>
+                        <div style="font-size: 1.5em; margin: 10px 0;">€${wine.einkaufspreis?.toFixed(2)} → €${wine.aktueller_wert?.toFixed(2)}</div>
+                        <div style="font-size: 1.8em; font-weight: bold;">+${wine.wertsteigerung_prozent?.toFixed(0)}% (€${wine.wertsteigerung_absolut?.toFixed(2)})</div>
+                    </div>
+                    
+                    ${wine.ratings ? `
+                    <div style="background: #fff9e6; border-left: 4px solid #ffd700; padding: 15px; border-radius: 8px; margin: 15px 0;">
+                        <div style="font-weight: bold; color: #b8860b; margin-bottom: 8px;">⭐ Ratings</div>
+                        <div style="font-size: 0.9em;">${wine.ratings}</div>
+                    </div>
+                    ` : ''}
+                    
+                    ${wine.notiz ? `
+                    <div style="background: #e6f3ff; border-left: 4px solid #2196F3; padding: 15px; border-radius: 8px; margin: 15px 0;">
+                        <div style="font-weight: bold; color: #0056b3; margin-bottom: 8px;">📝 Notiz</div>
+                        <div style="font-size: 0.9em; color: #555;">${wine.notiz}</div>
+                    </div>
+                    ` : ''}
+                    
                     <button class="btn btn-danger" onclick="drinkWine(${wine.id})">🍷 Trinken</button>
                     <button class="btn btn-secondary" onclick="closeModal()">Schließen</button>
                 </div>
