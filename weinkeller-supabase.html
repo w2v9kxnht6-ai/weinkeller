@@ -1,0 +1,1052 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Weinkeller">
+    <title>🍷 Weinkeller</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding-bottom: 80px;
+        }
+        
+        .header {
+            background: rgba(0,0,0,0.3);
+            backdrop-filter: blur(10px);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+        }
+        
+        .header h1 {
+            font-size: 1.8em;
+            margin-bottom: 5px;
+        }
+        
+        .sync-status {
+            font-size: 0.85em;
+            opacity: 0.9;
+            margin-top: 5px;
+        }
+        
+        .loading {
+            color: white;
+            text-align: center;
+            padding: 40px;
+            font-size: 1.2em;
+        }
+        
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            padding: 20px;
+        }
+        
+        .stat-card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .stat-card .icon {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .stat-card .value {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #667eea;
+            margin: 5px 0;
+        }
+        
+        .stat-card .label {
+            color: #666;
+            font-size: 0.9em;
+        }
+        
+        .tabs {
+            display: flex;
+            background: white;
+            margin: 20px;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .tab {
+            flex: 1;
+            padding: 15px 8px;
+            text-align: center;
+            background: white;
+            border: none;
+            font-size: 0.9em;
+            font-weight: 500;
+            color: #666;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .tab.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .search-box {
+            margin: 0 20px 20px;
+            position: relative;
+        }
+        
+        .search-box input {
+            width: 100%;
+            padding: 15px 45px 15px 20px;
+            border: none;
+            border-radius: 15px;
+            font-size: 1em;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .wine-list {
+            padding: 0 20px;
+        }
+        
+        .wine-card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            cursor: pointer;
+            position: relative;
+        }
+        
+        .wine-card:active {
+            transform: scale(0.98);
+        }
+        
+        .wine-card .header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        
+        .wine-card .position {
+            background: #667eea;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+        
+        .position-lieferung {
+            background: #ff9800 !important;
+        }
+        
+        .ring {
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-weight: bold;
+            font-size: 0.85em;
+        }
+        
+        .ring-rosa { background: #ffb3c1; color: #8b0000; }
+        .ring-gruen { background: #b3ffb3; color: #006400; }
+        .ring-blau { background: #b3d9ff; color: #00008b; }
+        
+        .wine-card h3 {
+            color: #2d1b69;
+            font-size: 1.2em;
+            margin-bottom: 5px;
+        }
+        
+        .wine-card .producer {
+            color: #666;
+            margin-bottom: 12px;
+        }
+        
+        .wine-card .details {
+            display: flex;
+            justify-content: space-between;
+            padding-top: 12px;
+            border-top: 1px solid #f0f0f0;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.8);
+            z-index: 1000;
+            overflow-y: auto;
+            padding: 20px;
+        }
+        
+        .modal.active {
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 20px;
+            padding: 25px;
+            width: 100%;
+            max-width: 500px;
+            margin: auto;
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .close-btn {
+            font-size: 1.8em;
+            cursor: pointer;
+            background: none;
+            border: none;
+            color: #999;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+        }
+        
+        .btn {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            margin: 10px 0;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        
+        .btn-warning {
+            background: #ff9800;
+            color: white;
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .form-group {
+            margin: 15px 0;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1em;
+            font-family: inherit;
+        }
+        
+        .form-group textarea {
+            min-height: 80px;
+            resize: vertical;
+        }
+        
+        .fab {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            font-size: 2em;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            cursor: pointer;
+            z-index: 99;
+        }
+        
+        .fab:active {
+            transform: scale(0.95);
+        }
+        
+        .action-menu {
+            display: grid;
+            gap: 10px;
+            margin: 20px 0;
+        }
+        
+        .success-msg {
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+            color: #155724;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+        
+        .error-msg {
+            background: #f8d7da;
+            border-left: 4px solid #dc3545;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: white;
+        }
+        
+        .empty-state .icon {
+            font-size: 4em;
+            margin-bottom: 15px;
+            opacity: 0.7;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🍷 Mein Weinkeller</h1>
+        <div class="sync-status" id="sync-status">Verbinde mit Cloud...</div>
+    </div>
+
+    <div id="loading" class="loading">
+        <div>📦 Lade Weinkeller...</div>
+    </div>
+
+    <div id="app" style="display: none;">
+        <div class="stats-container">
+            <div class="stat-card">
+                <div class="icon">🍾</div>
+                <div class="value" id="stat-flaschen">-</div>
+                <div class="label">Flaschen</div>
+            </div>
+            <div class="stat-card">
+                <div class="icon">💰</div>
+                <div class="value" id="stat-wert">-</div>
+                <div class="label">Wert</div>
+            </div>
+            <div class="stat-card">
+                <div class="icon">📈</div>
+                <div class="value" id="stat-perf">-</div>
+                <div class="label">Performance</div>
+            </div>
+            <div class="stat-card">
+                <div class="icon">🎯</div>
+                <div class="value" id="stat-gewinn">-</div>
+                <div class="label">Gewinn</div>
+            </div>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" data-tab="alle">Alle</button>
+            <button class="tab" data-tab="rosa">🌸</button>
+            <button class="tab" data-tab="gruen">🟢</button>
+            <button class="tab" data-tab="blau">🔵</button>
+            <button class="tab" data-tab="lieferung">📦</button>
+            <button class="tab" data-tab="getrunken">✅</button>
+        </div>
+
+        <div class="search-box">
+            <input type="text" id="search" placeholder="Suche...">
+        </div>
+
+        <div class="wine-list" id="wine-list"></div>
+    </div>
+
+    <button class="fab" onclick="showActionMenu()" title="Aktionen">+</button>
+
+    <div class="modal" id="modal"></div>
+    <div class="modal" id="action-modal"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        // Supabase Config
+        const SUPABASE_URL = 'https://cdxmdavnspgczenhgjmk.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNkeG1kYXZuc3BnY3plbmhnam1rIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExMDI2NDEsImV4cCI6MjA4NjY3ODY0MX0.HgoScNFXdOTFKmPn5lJuh7V0GAoABPz61p1JcjDovbE';
+        
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        
+        let wines = [];
+        let currentFilter = 'alle';
+        
+        // Init
+        async function init() {
+            try {
+                await loadWines();
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('app').style.display = 'block';
+                document.getElementById('sync-status').textContent = `${wines.length} Flaschen · Cloud ✓`;
+                
+                // Event Listeners
+                document.querySelectorAll('.tab').forEach(tab => {
+                    tab.addEventListener('click', () => {
+                        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                        tab.classList.add('active');
+                        currentFilter = tab.dataset.tab;
+                        renderWines();
+                    });
+                });
+                
+                document.getElementById('search').addEventListener('input', () => renderWines());
+                
+                // Modal close on outside click
+                document.getElementById('modal').addEventListener('click', (e) => {
+                    if (e.target.id === 'modal') closeModal();
+                });
+                document.getElementById('action-modal').addEventListener('click', (e) => {
+                    if (e.target.id === 'action-modal') closeActionModal();
+                });
+                
+            } catch (error) {
+                document.getElementById('loading').innerHTML = `
+                    <div style="color: #ff6b6b;">
+                        <div style="font-size: 3em; margin-bottom: 20px;">⚠️</div>
+                        <div>Fehler beim Laden</div>
+                        <div style="font-size: 0.9em; margin-top: 10px;">${error.message}</div>
+                    </div>
+                `;
+            }
+        }
+        
+        async function loadWines() {
+            const { data, error } = await supabase
+                .from('weine')
+                .select('*')
+                .order('position');
+            
+            if (error) throw error;
+            wines = data;
+            updateStats();
+            renderWines();
+        }
+        
+        function updateStats() {
+            const active = wines.filter(w => !w.position.includes('GETRUNKEN'));
+            const total_wert = active.reduce((sum, w) => sum + (w.aktueller_wert || 0), 0);
+            const total_ek = active.reduce((sum, w) => sum + (w.einkaufspreis || 0), 0);
+            const gewinn = total_wert - total_ek;
+            const perf = total_ek > 0 ? ((total_wert / total_ek - 1) * 100) : 0;
+            
+            document.getElementById('stat-flaschen').textContent = active.length;
+            document.getElementById('stat-wert').textContent = `€${Math.round(total_wert)}`;
+            document.getElementById('stat-perf').textContent = `+${Math.round(perf)}%`;
+            document.getElementById('stat-gewinn').textContent = `€${Math.round(gewinn)}`;
+        }
+        
+        function renderWines() {
+            const search = document.getElementById('search').value.toLowerCase();
+            let filtered = wines;
+            
+            // Filter
+            if (currentFilter === 'rosa') filtered = filtered.filter(w => w.ring === 'Rosa' && !w.position.includes('GETRUNKEN'));
+            else if (currentFilter === 'gruen') filtered = filtered.filter(w => w.ring === 'Grün' && !w.position.includes('GETRUNKEN'));
+            else if (currentFilter === 'blau') filtered = filtered.filter(w => w.ring === 'Blau' && !w.position.includes('GETRUNKEN'));
+            else if (currentFilter === 'lieferung') filtered = filtered.filter(w => w.position.includes('LIEFERUNG'));
+            else if (currentFilter === 'getrunken') filtered = filtered.filter(w => w.position.includes('GETRUNKEN'));
+            else if (currentFilter === 'alle') filtered = filtered.filter(w => !w.position.includes('GETRUNKEN'));
+            
+            // Search
+            if (search) {
+                filtered = filtered.filter(w => 
+                    (w.produzent && w.produzent.toLowerCase().includes(search)) ||
+                    (w.weinname && w.weinname.toLowerCase().includes(search)) ||
+                    (w.position && w.position.toLowerCase().includes(search)) ||
+                    (w.jahrgang && String(w.jahrgang).includes(search))
+                );
+            }
+            
+            const container = document.getElementById('wine-list');
+            
+            if (filtered.length === 0) {
+                container.innerHTML = '<div class="empty-state"><div class="icon">🍷</div><div>Keine Weine gefunden</div></div>';
+                return;
+            }
+            
+            container.innerHTML = filtered.map(w => {
+                let ringHTML = '';
+                if (w.ring === 'Rosa') ringHTML = '<span class="ring ring-rosa">🌸</span>';
+                if (w.ring === 'Grün') ringHTML = '<span class="ring ring-gruen">🟢</span>';
+                if (w.ring === 'Blau') ringHTML = '<span class="ring ring-blau">🔵</span>';
+                
+                const posClass = w.position.includes('LIEFERUNG') ? 'position-lieferung' : '';
+                
+                return `
+                    <div class="wine-card" onclick="showWineDetail(${w.id})">
+                        <div class="header-row">
+                            <div class="position ${posClass}">${w.position}</div>
+                            ${ringHTML}
+                        </div>
+                        <h3>${w.weinname}</h3>
+                        <div class="producer">${w.produzent} · ${w.jahrgang || 'n/a'}</div>
+                        <div class="details">
+                            <div><small>Wert:</small><br><strong>€${w.aktueller_wert?.toFixed(0) || 0}</strong></div>
+                            <div><small>Perf:</small><br><strong style="color: #28a745">+${w.wertsteigerung_prozent?.toFixed(0) || 0}%</strong></div>
+                            <div><small>Bis:</small><br><strong>${w.trinkreife_ende || '-'}</strong></div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        function showWineDetail(id) {
+            const wine = wines.find(w => w.id === id);
+            if (!wine) return;
+            
+            let ringHTML = '';
+            if (wine.ring === 'Rosa') ringHTML = '<span class="ring ring-rosa">🌸 Rosa (2026)</span>';
+            if (wine.ring === 'Grün') ringHTML = '<span class="ring ring-gruen">🟢 Grün (2027)</span>';
+            if (wine.ring === 'Blau') ringHTML = '<span class="ring ring-blau">🔵 Blau</span>';
+            
+            const isGetrunken = wine.position.includes('GETRUNKEN');
+            const isLieferung = wine.position.includes('LIEFERUNG');
+            
+            const html = `
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2>${wine.position}</h2>
+                        <button class="close-btn" onclick="closeModal()">×</button>
+                    </div>
+                    
+                    ${ringHTML}
+                    
+                    <h2 style="margin: 15px 0 5px;">${wine.weinname}</h2>
+                    <p style="color: #666; margin-bottom: 20px;">${wine.produzent} · ${wine.jahrgang || 'n/a'}</p>
+                    
+                    <div style="display: grid; gap: 12px; margin: 20px 0;">
+                        <div style="background: #f8f9fa; padding: 12px; border-radius: 8px;">
+                            <div style="font-size: 0.85em; color: #666;">🍇 Traube</div>
+                            <div style="font-weight: bold;">${wine.traube || 'n/a'}</div>
+                        </div>
+                        <div style="background: #f8f9fa; padding: 12px; border-radius: 8px;">
+                            <div style="font-size: 0.85em; color: #666;">🍾 Größe / Alkohol</div>
+                            <div style="font-weight: bold;">${wine.flaschengroesse || 'n/a'} · ${wine.alkohol || 'n/a'}</div>
+                        </div>
+                        <div style="background: #f8f9fa; padding: 12px; border-radius: 8px;">
+                            <div style="font-size: 0.85em; color: #666;">🪵 Ausbau</div>
+                            <div style="font-weight: bold;">${wine.ausbau || 'n/a'}</div>
+                        </div>
+                        <div style="background: #f8f9fa; padding: 12px; border-radius: 8px;">
+                            <div style="font-size: 0.85em; color: #666;">📅 Trinkreife</div>
+                            <div style="font-weight: bold;">${wine.trinkreife_start || '-'} bis ${wine.trinkreife_ende || '-'}</div>
+                        </div>
+                        ${wine.dekantierzeit ? `
+                        <div style="background: #f8f9fa; padding: 12px; border-radius: 8px;">
+                            <div style="font-size: 0.85em; color: #666;">🕐 Dekantieren</div>
+                            <div style="font-weight: bold;">${wine.dekantierzeit}</div>
+                        </div>
+                        ` : ''}
+                    </div>
+                    
+                    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 15px; margin: 20px 0; text-align: center;">
+                        <div style="opacity: 0.9;">EK → Wert</div>
+                        <div style="font-size: 1.5em; margin: 10px 0;">€${wine.einkaufspreis?.toFixed(2)} → €${wine.aktueller_wert?.toFixed(2)}</div>
+                        <div style="font-size: 1.8em; font-weight: bold;">+${wine.wertsteigerung_prozent?.toFixed(0)}%</div>
+                    </div>
+                    
+                    ${wine.ratings ? `
+                    <div style="background: #fff9e6; border-left: 4px solid #ffd700; padding: 15px; border-radius: 8px; margin: 15px 0;">
+                        <div style="font-weight: bold; color: #b8860b; margin-bottom: 8px;">⭐ Ratings</div>
+                        <div style="font-size: 0.9em;">${wine.ratings}</div>
+                    </div>
+                    ` : ''}
+                    
+                    ${wine.notiz ? `
+                    <div style="background: #e6f3ff; border-left: 4px solid #2196F3; padding: 15px; border-radius: 8px; margin: 15px 0;">
+                        <div style="font-weight: bold; color: #0056b3; margin-bottom: 8px;">📝 Notiz</div>
+                        <div style="font-size: 0.9em;">${wine.notiz}</div>
+                    </div>
+                    ` : ''}
+                    
+                    ${!isGetrunken ? `
+                        ${isLieferung ? `
+                            <button class="btn btn-success" onclick="moveToLager(${wine.id})">📦 → 🏠 In Lager verschieben</button>
+                        ` : ''}
+                        <button class="btn btn-primary" onclick="editPosition(${wine.id})">📍 Position ändern</button>
+                        <button class="btn btn-danger" onclick="drinkWine(${wine.id})">🍷 Trinken</button>
+                    ` : ''}
+                    <button class="btn btn-secondary" onclick="closeModal()">Schließen</button>
+                </div>
+            `;
+            
+            document.getElementById('modal').innerHTML = html;
+            document.getElementById('modal').classList.add('active');
+        }
+        
+        function showActionMenu() {
+            const html = `
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2>Aktionen</h2>
+                        <button class="close-btn" onclick="closeActionModal()">×</button>
+                    </div>
+                    <div class="action-menu">
+                        <button class="btn btn-primary" onclick="showDrinkDialog()">🍷 Wein trinken</button>
+                        <button class="btn btn-success" onclick="showAddWineDialog()">➕ Neuen Wein hinzufügen</button>
+                        <button class="btn btn-warning" onclick="showMoveFromLieferungDialog()">📦 Lieferung → Lager</button>
+                    </div>
+                    <button class="btn btn-secondary" onclick="closeActionModal()">Abbrechen</button>
+                </div>
+            `;
+            
+            document.getElementById('action-modal').innerHTML = html;
+            document.getElementById('action-modal').classList.add('active');
+        }
+        
+        async function drinkWine(id) {
+            const wine = wines.find(w => w.id === id);
+            
+            const html = `
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2>🍷 Wein trinken</h2>
+                        <button class="close-btn" onclick="closeModal()">×</button>
+                    </div>
+                    <h3>${wine.weinname}</h3>
+                    <p>${wine.produzent} (${wine.position})</p>
+                    <div class="form-group">
+                        <label>Bewertung (0-100)</label>
+                        <input type="number" id="drink-rating" min="0" max="100" placeholder="z.B. 92">
+                    </div>
+                    <div class="form-group">
+                        <label>Notiz</label>
+                        <textarea id="drink-note" placeholder="Wie war der Wein?"></textarea>
+                    </div>
+                    <button class="btn btn-primary" onclick="confirmDrink(${id})">Getrunken!</button>
+                    <button class="btn btn-secondary" onclick="closeModal()">Abbrechen</button>
+                </div>
+            `;
+            
+            document.getElementById('modal').innerHTML = html;
+            document.getElementById('modal').classList.add('active');
+        }
+        
+        async function confirmDrink(id) {
+            const rating = document.getElementById('drink-rating').value;
+            const note = document.getElementById('drink-note').value;
+            
+            const wine = wines.find(w => w.id === id);
+            const newPos = 'GETRUNKEN_' + wine.position.replace('LIEFERUNG_', '');
+            
+            let verkostung = `GETRUNKEN am ${new Date().toLocaleDateString('de-DE')}`;
+            if (rating) verkostung += ` | Bewertung: ${rating}/100`;
+            if (note) verkostung += ` | ${note}`;
+            
+            const newNotiz = (wine.notiz || '') + ' | ' + verkostung;
+            
+            const { error } = await supabase
+                .from('weine')
+                .update({ 
+                    position: newPos,
+                    notiz: newNotiz
+                })
+                .eq('id', id);
+            
+            if (error) {
+                alert('Fehler: ' + error.message);
+                return;
+            }
+            
+            await loadWines();
+            closeModal();
+            
+            document.getElementById('modal').innerHTML = `
+                <div class="modal-content">
+                    <div class="success-msg">✅ ${wine.weinname} als getrunken markiert!</div>
+                    <button class="btn btn-primary" onclick="closeModal()">OK</button>
+                </div>
+            `;
+            document.getElementById('modal').classList.add('active');
+        }
+        
+        function showDrinkDialog() {
+            closeActionModal();
+            
+            const active = wines.filter(w => !w.position.includes('GETRUNKEN'));
+            const options = active.map(w => 
+                `<option value="${w.id}">${w.position} - ${w.produzent} ${w.weinname} (${w.jahrgang})</option>`
+            ).join('');
+            
+            const html = `
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2>🍷 Wein trinken</h2>
+                        <button class="close-btn" onclick="closeModal()">×</button>
+                    </div>
+                    <div class="form-group">
+                        <label>Wein auswählen</label>
+                        <select id="drink-wine-select">${options}</select>
+                    </div>
+                    <div class="form-group">
+                        <label>Bewertung (0-100)</label>
+                        <input type="number" id="drink-rating" min="0" max="100" placeholder="z.B. 92">
+                    </div>
+                    <div class="form-group">
+                        <label>Notiz</label>
+                        <textarea id="drink-note" placeholder="Wie war der Wein?"></textarea>
+                    </div>
+                    <button class="btn btn-primary" onclick="confirmDrinkFromSelect()">Getrunken!</button>
+                    <button class="btn btn-secondary" onclick="closeModal()">Abbrechen</button>
+                </div>
+            `;
+            
+            document.getElementById('modal').innerHTML = html;
+            document.getElementById('modal').classList.add('active');
+        }
+        
+        async function confirmDrinkFromSelect() {
+            const id = parseInt(document.getElementById('drink-wine-select').value);
+            await confirmDrink(id);
+        }
+        
+        async function editPosition(id) {
+            const wine = wines.find(w => w.id === id);
+            
+            const html = `
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2>📍 Position ändern</h2>
+                        <button class="close-btn" onclick="closeModal()">×</button>
+                    </div>
+                    <h3>${wine.weinname}</h3>
+                    <p>Aktuell: ${wine.position}</p>
+                    <div class="form-group">
+                        <label>Neue Position</label>
+                        <input type="text" id="new-position" value="${wine.position}" placeholder="z.B. B5">
+                    </div>
+                    <button class="btn btn-primary" onclick="confirmPositionChange(${id})">Position ändern</button>
+                    <button class="btn btn-secondary" onclick="closeModal()">Abbrechen</button>
+                </div>
+            `;
+            
+            document.getElementById('modal').innerHTML = html;
+            document.getElementById('modal').classList.add('active');
+        }
+        
+        async function confirmPositionChange(id) {
+            const newPos = document.getElementById('new-position').value.trim();
+            
+            if (!newPos) {
+                alert('Bitte Position eingeben!');
+                return;
+            }
+            
+            const { error } = await supabase
+                .from('weine')
+                .update({ position: newPos })
+                .eq('id', id);
+            
+            if (error) {
+                alert('Fehler: ' + error.message);
+                return;
+            }
+            
+            await loadWines();
+            closeModal();
+            
+            document.getElementById('modal').innerHTML = `
+                <div class="modal-content">
+                    <div class="success-msg">✅ Position geändert zu ${newPos}</div>
+                    <button class="btn btn-primary" onclick="closeModal()">OK</button>
+                </div>
+            `;
+            document.getElementById('modal').classList.add('active');
+        }
+        
+        async function moveToLager(id) {
+            const wine = wines.find(w => w.id === id);
+            
+            const html = `
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2>📦 → 🏠 In Lager</h2>
+                        <button class="close-btn" onclick="closeModal()">×</button>
+                    </div>
+                    <h3>${wine.weinname}</h3>
+                    <p>Von: ${wine.position}</p>
+                    <div class="form-group">
+                        <label>Neue Position im Lager</label>
+                        <input type="text" id="lager-position" placeholder="z.B. A3">
+                    </div>
+                    <button class="btn btn-success" onclick="confirmMoveToLager(${id})">Ins Lager verschieben</button>
+                    <button class="btn btn-secondary" onclick="closeModal()">Abbrechen</button>
+                </div>
+            `;
+            
+            document.getElementById('modal').innerHTML = html;
+            document.getElementById('modal').classList.add('active');
+        }
+        
+        async function confirmMoveToLager(id) {
+            const newPos = document.getElementById('lager-position').value.trim();
+            
+            if (!newPos) {
+                alert('Bitte Position eingeben!');
+                return;
+            }
+            
+            const { error } = await supabase
+                .from('weine')
+                .update({ position: newPos })
+                .eq('id', id);
+            
+            if (error) {
+                alert('Fehler: ' + error.message);
+                return;
+            }
+            
+            await loadWines();
+            closeModal();
+            
+            document.getElementById('modal').innerHTML = `
+                <div class="modal-content">
+                    <div class="success-msg">✅ In Lager verschoben! Position: ${newPos}</div>
+                    <button class="btn btn-primary" onclick="closeModal()">OK</button>
+                </div>
+            `;
+            document.getElementById('modal').classList.add('active');
+        }
+        
+        function showMoveFromLieferungDialog() {
+            closeActionModal();
+            
+            const lieferung = wines.filter(w => w.position.includes('LIEFERUNG'));
+            
+            if (lieferung.length === 0) {
+                document.getElementById('modal').innerHTML = `
+                    <div class="modal-content">
+                        <div style="padding: 20px; text-align: center;">
+                            <div style="font-size: 3em; margin-bottom: 15px;">📦</div>
+                            <div>Keine Weine in Lieferung</div>
+                        </div>
+                        <button class="btn btn-primary" onclick="closeModal()">OK</button>
+                    </div>
+                `;
+                document.getElementById('modal').classList.add('active');
+                return;
+            }
+            
+            const options = lieferung.map(w => 
+                `<option value="${w.id}">${w.produzent} ${w.weinname} (${w.jahrgang})</option>`
+            ).join('');
+            
+            const html = `
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2>📦 Lieferung → Lager</h2>
+                        <button class="close-btn" onclick="closeModal()">×</button>
+                    </div>
+                    <div class="form-group">
+                        <label>Wein auswählen</label>
+                        <select id="lieferung-wine-select">${options}</select>
+                    </div>
+                    <div class="form-group">
+                        <label>Position im Lager</label>
+                        <input type="text" id="lieferung-position" placeholder="z.B. A3">
+                    </div>
+                    <button class="btn btn-success" onclick="confirmMoveFromLieferung()">Ins Lager verschieben</button>
+                    <button class="btn btn-secondary" onclick="closeModal()">Abbrechen</button>
+                </div>
+            `;
+            
+            document.getElementById('modal').innerHTML = html;
+            document.getElementById('modal').classList.add('active');
+        }
+        
+        async function confirmMoveFromLieferung() {
+            const id = parseInt(document.getElementById('lieferung-wine-select').value);
+            const newPos = document.getElementById('lieferung-position').value.trim();
+            
+            if (!newPos) {
+                alert('Bitte Position eingeben!');
+                return;
+            }
+            
+            const { error } = await supabase
+                .from('weine')
+                .update({ position: newPos })
+                .eq('id', id);
+            
+            if (error) {
+                alert('Fehler: ' + error.message);
+                return;
+            }
+            
+            await loadWines();
+            closeModal();
+            
+            document.getElementById('modal').innerHTML = `
+                <div class="modal-content">
+                    <div class="success-msg">✅ Wein ins Lager verschoben! Position: ${newPos}</div>
+                    <button class="btn btn-primary" onclick="closeModal()">OK</button>
+                </div>
+            `;
+            document.getElementById('modal').classList.add('active');
+        }
+        
+        function showAddWineDialog() {
+            closeActionModal();
+            
+            const html = `
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2>➕ Neuen Wein hinzufügen</h2>
+                        <button class="close-btn" onclick="closeModal()">×</button>
+                    </div>
+                    <div class="form-group">
+                        <label>Position *</label>
+                        <input type="text" id="new-wine-position" placeholder="z.B. A3" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Produzent *</label>
+                        <input type="text" id="new-wine-produzent" placeholder="z.B. Fontodi" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Weinname *</label>
+                        <input type="text" id="new-wine-name" placeholder="z.B. Flaccianello" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Jahrgang</label>
+                        <input type="number" id="new-wine-jahrgang" placeholder="z.B. 2019">
+                    </div>
+                    <div class="form-group">
+                        <label>Einkaufspreis €</label>
+                        <input type="number" id="new-wine-ek" placeholder="z.B. 49.90" step="0.01">
+                    </div>
+                    <div class="form-group">
+                        <label>Aktueller Wert €</label>
+                        <input type="number" id="new-wine-wert" placeholder="z.B. 185" step="0.01">
+                    </div>
+                    <div class="form-group">
+                        <label>Ring</label>
+                        <select id="new-wine-ring">
+                            <option value="">Kein Ring</option>
+                            <option value="Rosa">🌸 Rosa</option>
+                            <option value="Grün">🟢 Grün</option>
+                            <option value="Blau">🔵 Blau</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-success" onclick="confirmAddWine()">Hinzufügen</button>
+                    <button class="btn btn-secondary" onclick="closeModal()">Abbrechen</button>
+                </div>
+            `;
+            
+            document.getElementById('modal').innerHTML = html;
+            document.getElementById('modal').classList.add('active');
+        }
+        
+        async function confirmAddWine() {
+            const position = document.getElementById('new-wine-position').value.trim();
+            const produzent = document.getElementById('new-wine-produzent').value.trim();
+            const weinname = document.getElementById('new-wine-name').value.trim();
+            const jahrgang = document.getElementById('new-wine-jahrgang').value || null;
+            const ek = parseFloat(document.getElementById('new-wine-ek').value) || 0;
+            const wert = parseFloat(document.getElementById('new-wine-wert').value) || 0;
+            const ring = document.getElementById('new-wine-ring').value || null;
+            
+            if (!position || !produzent || !weinname) {
+                alert('Bitte Position, Produzent und Weinname eingeben!');
+                return;
+            }
+            
+            const wertsteigerung_absolut = wert - ek;
+            const wertsteigerung_prozent = ek > 0 ? (wertsteigerung_absolut / ek * 100) : 0;
+            
+            const { error } = await supabase
+                .from('weine')
+                .insert({
+                    position,
+                    produzent,
+                    weinname,
+                    jahrgang: jahrgang ? parseInt(jahrgang) : null,
+                    einkaufspreis: ek,
+                    aktueller_wert: wert,
+                    ring,
+                    wertsteigerung_prozent,
+                    wertsteigerung_absolut
+                });
+            
+            if (error) {
+                alert('Fehler: ' + error.message);
+                return;
+            }
+            
+            await loadWines();
+            closeModal();
+            
+            document.getElementById('modal').innerHTML = `
+                <div class="modal-content">
+                    <div class="success-msg">✅ ${weinname} hinzugefügt! Position: ${position}</div>
+                    <button class="btn btn-primary" onclick="closeModal()">OK</button>
+                </div>
+            `;
+            document.getElementById('modal').classList.add('active');
+        }
+        
+        function closeModal() {
+            document.getElementById('modal').classList.remove('active');
+        }
+        
+        function closeActionModal() {
+            document.getElementById('action-modal').classList.remove('active');
+        }
+        
+        // Start
+        init();
+    </script>
+</body>
+</html>
