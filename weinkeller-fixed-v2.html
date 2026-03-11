@@ -321,12 +321,32 @@
         .modal-content {
             background: white;
             border-radius: 24px;
-            padding: 30px;
             max-width: 520px;
             width: 100%;
+            max-height: 90vh;
             box-shadow: var(--shadow-lg);
             animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             position: relative;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        
+        .modal-scroll {
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding: 30px;
+            flex: 1;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        .modal-content h3 {
+            position: sticky;
+            top: 0;
+            background: white;
+            z-index: 10;
+            padding-bottom: 10px;
+            margin: 0 0 8px 0;
         }
         
         @keyframes slideUp {
@@ -733,72 +753,74 @@
             
             const modalHtml = `
                 <div class="modal-content">
-                    <div class="modal-header">
-                        <div class="modal-pos">${w.position}</div>
-                        <button class="close-btn" id="close-btn">×</button>
-                    </div>
-                    
-                    ${ringBadge ? `<div style="margin-bottom: 15px;">${ringBadge}</div>` : ''}
-                    
-                    <h3>${w.weinname}</h3>
-                    <div class="modal-prod">${w.produzent} · ${w.jahrgang || 'n/a'}</div>
-                    
-                    <div class="detail-box">
-                        <div>
-                            <span class="detail-label">🍇 Traube</span>
-                            <span class="detail-value">${w.traube || 'n/a'}</span>
+                    <div class="modal-scroll">
+                        <div class="modal-header">
+                            <div class="modal-pos">${w.position}</div>
+                            <button class="close-btn" id="close-btn">×</button>
                         </div>
-                        <div>
-                            <span class="detail-label">🍾 Größe</span>
-                            <span class="detail-value">${w.flaschengroesse || 'n/a'}</span>
-                        </div>
-                        <div>
-                            <span class="detail-label">🍷 Alkohol</span>
-                            <span class="detail-value">${w.alkohol || 'n/a'}</span>
-                        </div>
-                        <div>
-                            <span class="detail-label">🍯 Restzucker</span>
-                            <span class="detail-value">${w.restzucker ? w.restzucker + ' g/l' : 'n/a'}</span>
-                        </div>
-                        <div>
-                            <span class="detail-label">🍋 Säure</span>
-                            <span class="detail-value">${w.saeure ? w.saeure + ' g/l' : 'n/a'}</span>
-                        </div>
-                        <div>
-                            <span class="detail-label">📅 Trinkreife</span>
-                            <span class="detail-value">
-                                <span class="trinkreife-badge ${trinkreifeClass}">
-                                    ${w.trinkreife_start || '-'} bis ${w.trinkreife_ende || '-'}
+                        
+                        ${ringBadge ? `<div style="margin-bottom: 15px;">${ringBadge}</div>` : ''}
+                        
+                        <h3>${w.weinname}</h3>
+                        <div class="modal-prod">${w.produzent} · ${w.jahrgang || 'n/a'}</div>
+                        
+                        <div class="detail-box">
+                            <div>
+                                <span class="detail-label">🍇 Traube</span>
+                                <span class="detail-value">${w.traube || 'n/a'}</span>
+                            </div>
+                            <div>
+                                <span class="detail-label">🍾 Größe</span>
+                                <span class="detail-value">${w.flaschengroesse || 'n/a'}</span>
+                            </div>
+                            <div>
+                                <span class="detail-label">🍷 Alkohol</span>
+                                <span class="detail-value">${w.alkohol || 'n/a'}</span>
+                            </div>
+                            <div>
+                                <span class="detail-label">🍯 Restzucker</span>
+                                <span class="detail-value">${w.restzucker ? w.restzucker + ' g/l' : 'n/a'}</span>
+                            </div>
+                            <div>
+                                <span class="detail-label">🍋 Säure</span>
+                                <span class="detail-value">${w.saeure ? w.saeure + ' g/l' : 'n/a'}</span>
+                            </div>
+                            <div>
+                                <span class="detail-label">📅 Trinkreife</span>
+                                <span class="detail-value">
+                                    <span class="trinkreife-badge ${trinkreifeClass}">
+                                        ${w.trinkreife_start || '-'} bis ${w.trinkreife_ende || '-'}
+                                    </span>
                                 </span>
-                            </span>
+                            </div>
                         </div>
+                        
+                        <div class="value-box">
+                            <div class="small">€${w.einkaufspreis?.toFixed(2) || '0.00'} → €${w.aktueller_wert?.toFixed(2) || '0.00'}</div>
+                            <div class="big">+${w.wertsteigerung_prozent?.toFixed(0) || 0}%</div>
+                        </div>
+                        
+                        ${w.ratings ? `
+                            <div class="ratings-box">
+                                <strong>⭐ Ratings</strong>
+                                <div class="ratings-list">${w.ratings.replace(/\|/g, ' · ')}</div>
+                            </div>
+                        ` : ''}
+                        
+                        ${w.notiz ? `
+                            <div class="notiz-box">
+                                <strong>📝 Notiz</strong>
+                                <div>${w.notiz}</div>
+                            </div>
+                        ` : ''}
+                        
+                        ${!isGetrunken ? `
+                            ${isLieferung ? '<button class="btn" id="move-btn">📦→🏠 Ins Lager</button>' : ''}
+                            <button class="btn" id="edit-pos-btn">📍 Position ändern</button>
+                            <button class="btn btn-danger" id="drink-btn">🍷 Trinken</button>
+                        ` : ''}
+                        <button class="btn btn-sec" id="close-btn2">Schließen</button>
                     </div>
-                    
-                    <div class="value-box">
-                        <div class="small">€${w.einkaufspreis?.toFixed(2) || '0.00'} → €${w.aktueller_wert?.toFixed(2) || '0.00'}</div>
-                        <div class="big">+${w.wertsteigerung_prozent?.toFixed(0) || 0}%</div>
-                    </div>
-                    
-                    ${w.ratings ? `
-                        <div class="ratings-box">
-                            <strong>⭐ Ratings</strong>
-                            <div class="ratings-list">${w.ratings.replace(/\|/g, ' · ')}</div>
-                        </div>
-                    ` : ''}
-                    
-                    ${w.notiz ? `
-                        <div class="notiz-box">
-                            <strong>📝 Notiz</strong>
-                            <div>${w.notiz}</div>
-                        </div>
-                    ` : ''}
-                    
-                    ${!isGetrunken ? `
-                        ${isLieferung ? '<button class="btn" id="move-btn">📦→🏠 Ins Lager</button>' : ''}
-                        <button class="btn" id="edit-pos-btn">📍 Position ändern</button>
-                        <button class="btn btn-danger" id="drink-btn">🍷 Trinken</button>
-                    ` : ''}
-                    <button class="btn btn-sec" id="close-btn2">Schließen</button>
                 </div>
             `
             
