@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🍷 Weinkeller Dashboard V3</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Lato:wght@300;400;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/dist/umd/supabase.js"></script>
+    <style>
+        :root {
+            --wine-red: #8B0000;
+            --wine-dark: #4A0000;
+            --wine-light: #A52A2A;
+            --gold: #D4AF37;
+            --cream: #FFF8DC;
+            --text-dark: #2C1810;
+            --glass-bg: rgba(255, 248, 220, 0.1);
+            --glass-border: rgba(212, 175, 55, 0.2);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Lato', sans-serif;
+            background: linear-gradient(135deg, var(--wine-dark) 0%, var(--wine-red) 50%, var(--wine-dark) 100%);
+            min-height: 100vh;
+            color: var(--cream);
+            padding-bottom: 2rem;
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--wine-red), var(--wine-dark));
+            padding: 1.5rem 1rem;
+            text-align: center;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+        }
+
+        .header h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--gold);
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            margin-bottom: 0.5rem;
+        }
+
+        .header .subtitle {
+            font-size: 0.9rem;
+            opacity: 0.9;
+            color: var(--cream);
+        }
+
+        .tabs {
+            display: flex;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 1rem;
+            background: rgba(0,0,0,0.2);
+        }
+
+        .tab-btn {
+            padding: 0.75rem 2rem;
+            border: 2px solid var(--gold);
+            background: var(--glass-bg);
+            color: var(--cream);
+            font-family: 'Playfair Display', serif;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .tab-btn:hover {
+            background: var(--gold);
+            color: var(--wine-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(212, 175, 55, 0.4);
+        }
+
+        .tab-btn.active {
+            background: var(--gold);
+            color: var(--wine-dark);
+            box-shadow: 0 0 20px rgba(212, 175, 55, 0.6);
+        }
+
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 1rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(212, 175, 55, 0.3);
+        }
+
+        .stat-card .label {
+            font-size: 0.85rem;
+            opacity: 0.8;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-card .value {
+            font-family: 'Playfair Display', serif;
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--gold);
+        }
+
+        .stat-card .subtext {
+            font-size: 0.9rem;
+            opacity: 0.7;
+            margin-top: 0.25rem;
+        }
+
+        .section {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .section h2 {
+            font-family: 'Playfair Display', serif;
+            color: var(--gold);
+            margin-bottom: 1rem;
+            font-size: 1.5rem;
+            border-bottom: 2px solid var(--gold);
+            padding-bottom: 0.5rem;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin: 1rem 0;
+        }
+
+        .top-list {
+            list-style: none;
+        }
+
+        .top-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem;
+            margin-bottom: 0.5rem;
+            background: rgba(255, 248, 220, 0.05);
+            border-radius: 8px;
+            border-left: 3px solid var(--gold);
+            transition: all 0.3s ease;
+        }
+
+        .top-item:hover {
+            background: rgba(212, 175, 55, 0.1);
+            transform: translateX(5px);
+        }
+
+        .top-item .rank {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--gold);
+            margin-right: 1rem;
+            min-width: 2rem;
+        }
+
+        .top-item .name {
+            flex: 1;
+            font-size: 0.95rem;
+        }
+
+        .top-item .value {
+            font-weight: 600;
+            color: var(--gold);
+            font-size: 1.1rem;
+        }
+
+        .alert-box {
+            background: rgba(255, 215, 0, 0.1);
+            border: 2px solid var(--gold);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .alert-box .alert-title {
+            font-weight: 600;
+            color: var(--gold);
+            margin-bottom: 0.5rem;
+            font-size: 1.1rem;
+        }
+
+        .alert-box ul {
+            list-style: none;
+            padding-left: 1rem;
+        }
+
+        .alert-box li {
+            margin-bottom: 0.25rem;
+            opacity: 0.9;
+        }
+
+        .filter-section {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+            backdrop-filter: blur(10px);
+        }
+
+        .filter-group {
+            margin-bottom: 1rem;
+        }
+
+        .filter-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: var(--gold);
+        }
+
+        input, select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            background: rgba(255, 248, 220, 0.1);
+            color: var(--cream);
+            font-size: 1rem;
+        }
+
+        input::placeholder {
+            color: rgba(255, 248, 220, 0.5);
+        }
+
+        .wine-grid {
+            display: grid;
+            gap: 1rem;
+        }
+
+        .wine-card {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 1rem;
+            backdrop-filter: blur(10px);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-left: 4px solid transparent;
+        }
+
+        .wine-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(212, 175, 55, 0.3);
+            border-left-color: var(--gold);
+        }
+
+        .wine-card.ring-blau { border-left-color: #4169E1; }
+        .wine-card.ring-rosa { border-left-color: #FF69B4; }
+        .wine-card.ring-gruen { border-left-color: #32CD32; }
+
+        .wine-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 0.5rem;
+        }
+
+        .wine-name {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--gold);
+        }
+
+        .wine-value {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--gold);
+        }
+
+        .wine-details {
+            font-size: 0.9rem;
+            opacity: 0.8;
+            margin-bottom: 0.5rem;
+        }
+
+        .wine-position {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            background: rgba(212, 175, 55, 0.2);
+            border-radius: 4px;
+            font-size: 0.85rem;
+            margin-top: 0.5rem;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 { font-size: 1.5rem; }
+            .tabs { flex-direction: column; padding: 0.5rem; }
+            .tab-btn { padding: 0.5rem 1rem; }
+            .stats-grid { grid-template-columns: 1fr; }
+            .chart-container { height: 250px; }
+        }
+
+        .loading {
+            text-align: center;
+            padding: 3rem;
+            font-size: 1.2rem;
+            color: var(--gold);
+        }
+
+        .error {
+            background: rgba(255, 0, 0, 0.1);
+            border: 2px solid #ff4444;
+            border-radius: 8px;
+            padding: 1rem;
+            margin: 1rem 0;
+            color: #ffcccc;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🍷 Mein Weinkeller</h1>
+        <div class="subtitle">Portfolio-Dashboard & Verwaltung</div>
+    </div>
+
+    <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('dashboard')">📊 Dashboard</button>
+        <button class="tab-btn" onclick="switchTab('weine')">🍷 Weine</button>
+    </div>
+
+    <div class="container">
+        <div id="dashboard-tab" class="tab-content active">
+            <div id="dashboard-loading" class="loading">Lade Dashboard...</div>
+            <div id="dashboard-content" style="display: none;">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="label">Flaschen</div>
+                        <div class="value" id="stat-total">-</div>
+                        <div class="subtext"><span id="stat-getrunken">-</span> getrunken</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="label">Gesamtwert</div>
+                        <div class="value" id="stat-wert">-</div>
+                        <div class="subtext">Ø <span id="stat-avg">-</span>/Fl.</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="label">Investment</div>
+                        <div class="value" id="stat-ek">-</div>
+                        <div class="subtext">Einkaufspreis</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="label">Wertsteigerung</div>
+                        <div class="value" id="stat-gewinn">-</div>
+                        <div class="subtext" id="stat-gewinn-pct">-</div>
+                    </div>
+                </div>
+
+                <div class="alert-box">
+                    <div class="alert-title">⚠️ Handlungsbedarf</div>
+                    <ul>
+                        <li>🌸 <strong id="rosa-count">-</strong> Rosa-Weine → 2026 trinken!</li>
+                        <li>🟢 <strong id="gruen-count">-</strong> Grün-Weine → bis 2027 trinken</li>
+                    </ul>
+                </div>
+
+                <div class="section">
+                    <h2>🎨 Ring-Verteilung</h2>
+                    <div class="chart-container">
+                        <canvas id="ringChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h2>🌍 Portfolio nach Ländern</h2>
+                    <div class="chart-container">
+                        <canvas id="countryChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h2>💎 Top 10 Wertvollste Weine</h2>
+                    <ul class="top-list" id="top-wert-list"></ul>
+                </div>
+
+                <div class="section">
+                    <h2>🏆 Top 10 Beste Preis/Leistung</h2>
+                    <ul class="top-list" id="top-pl-list"></ul>
+                </div>
+            </div>
+        </div>
+
+        <div id="weine-tab" class="tab-content">
+            <div id="weine-loading" class="loading">Lade Weine...</div>
+            <div id="weine-content" style="display: none;">
+                <div class="filter-section">
+                    <div class="filter-group">
+                        <label>🔍 Suche</label>
+                        <input type="text" id="search" placeholder="Produzent, Wein, Position...">
+                    </div>
+                    <div class="filter-group">
+                        <label>🎨 Ring</label>
+                        <select id="ringFilter">
+                            <option value="">Alle</option>
+                            <option value="Blau">🔵 Blau</option>
+                            <option value="Rosa">🌸 Rosa</option>
+                            <option value="Grün">🟢 Grün</option>
+                            <option value="">⚪ Kein Ring</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="wine-grid" id="wine-grid"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        console.log('🍷 App Start');
+        
+        // Supabase Setup
+        const SUPABASE_URL = 'https://cdxmdavnspgczenhgjmk.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNkeG1kYXZuc3BnY3plbmhnam1rIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExMDI2NDEsImV4cCI6MjA4NjY3ODY0MX0.HgoScNFXdOTFKmPn5lJuh7V0GAoABPz61p1JcjDovbE';
+        
+        console.log('📡 Supabase laden...');
+        const { createClient } = supabase;
+        const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
+        console.log('✅ Supabase Client erstellt');
+
+        let allWeine = [];
+        let dashboardLoaded = false;
+        let weineLoaded = false;
+
+        function switchTab(tabName) {
+            console.log('🔄 Switch zu Tab:', tabName);
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            
+            document.getElementById(tabName + '-tab').classList.add('active');
+            event.target.classList.add('active');
+
+            if (tabName === 'dashboard' && !dashboardLoaded) {
+                loadDashboard();
+            } else if (tabName === 'weine' && !weineLoaded) {
+                loadWeine();
+            }
+        }
+
+        async function loadDashboard() {
+            console.log('📊 Lade Dashboard...');
+            try {
+                const { data, error } = await sb
+                    .from('weine')
+                    .select('*')
+                    .order('position');
+
+                if (error) {
+                    console.error('❌ Supabase Error:', error);
+                    throw error;
+                }
+
+                console.log('✅ Daten geladen:', data.length, 'Weine');
+                allWeine = data;
+                const aktiv = data.filter(w => !w.position.startsWith('GETRUNKEN'));
+                const getrunken = data.length - aktiv.length;
+
+                const totalWert = aktiv.reduce((sum, w) => sum + (parseFloat(w.aktueller_wert) || 0), 0);
+                const totalEK = aktiv.reduce((sum, w) => sum + (parseFloat(w.einkaufspreis) || 0), 0);
+                const gewinn = totalWert - totalEK;
+                const gewinnPct = totalEK > 0 ? (gewinn / totalEK * 100) : 0;
+
+                const rings = { Blau: 0, Rosa: 0, Grün: 0, 'Kein Ring': 0 };
+                const ringWerte = { Blau: 0, Rosa: 0, Grün: 0, 'Kein Ring': 0 };
+                aktiv.forEach(w => {
+                    const ring = w.ring || 'Kein Ring';
+                    rings[ring]++;
+                    ringWerte[ring] += parseFloat(w.aktueller_wert) || 0;
+                });
+
+                const countryMap = {
+                    'Fontodi': 'Italien', 'Fuligni': 'Italien', 'Antinori': 'Italien', 'Cerro': 'Italien',
+                    'Salcheto': 'Italien', 'Badia': 'Italien', 'Poliziano': 'Italien', 'Poggione': 'Italien',
+                    'Château': 'Frankreich', 'Domaine': 'Frankreich', 'Clos': 'Frankreich',
+                    'Kollwentz': 'Österreich', 'Nittnaus': 'Österreich', 'Pöckl': 'Österreich',
+                    'Tesch': 'Österreich', 'Aigner': 'Österreich', 'Pferschy': 'Österreich',
+                    'Marqués': 'Spanien', 'Almez': 'Spanien', 'Sariño': 'Spanien',
+                    'Damjanic': 'Kroatien', 'Arman': 'Kroatien'
+                };
+
+                const countries = {};
+                aktiv.forEach(w => {
+                    let country = 'Andere';
+                    for (const [key, val] of Object.entries(countryMap)) {
+                        if (w.produzent.includes(key)) {
+                            country = val;
+                            break;
+                        }
+                    }
+                    countries[country] = (countries[country] || 0) + (parseFloat(w.aktueller_wert) || 0);
+                });
+
+                console.log('📈 Stats berechnet');
+
+                document.getElementById('stat-total').textContent = aktiv.length;
+                document.getElementById('stat-getrunken').textContent = getrunken;
+                document.getElementById('stat-wert').textContent = '€' + totalWert.toFixed(0);
+                document.getElementById('stat-avg').textContent = '€' + (totalWert / aktiv.length).toFixed(2);
+                document.getElementById('stat-ek').textContent = '€' + totalEK.toFixed(0);
+                document.getElementById('stat-gewinn').textContent = '+€' + gewinn.toFixed(0);
+                document.getElementById('stat-gewinn-pct').textContent = '+' + gewinnPct.toFixed(1) + '%';
+                document.getElementById('rosa-count').textContent = rings.Rosa;
+                document.getElementById('gruen-count').textContent = rings.Grün;
+
+                console.log('📊 Erstelle Charts...');
+                createRingChart(rings, ringWerte);
+                createCountryChart(countries);
+
+                const topWert = [...aktiv].sort((a, b) => (parseFloat(b.aktueller_wert) || 0) - (parseFloat(a.aktueller_wert) || 0)).slice(0, 10);
+                const topPL = [...aktiv].filter(w => parseFloat(w.einkaufspreis) > 0).sort((a, b) => (parseFloat(b.wertsteigerung_prozent) || 0) - (parseFloat(a.wertsteigerung_prozent) || 0)).slice(0, 10);
+
+                renderTopList('top-wert-list', topWert, w => '€' + parseFloat(w.aktueller_wert).toFixed(0));
+                renderTopList('top-pl-list', topPL, w => '+' + parseFloat(w.wertsteigerung_prozent).toFixed(0) + '%');
+
+                document.getElementById('dashboard-loading').style.display = 'none';
+                document.getElementById('dashboard-content').style.display = 'block';
+                dashboardLoaded = true;
+                console.log('✅ Dashboard fertig!');
+            } catch (err) {
+                console.error('💥 Dashboard Error:', err);
+                document.getElementById('dashboard-loading').innerHTML = `
+                    <div class="error">
+                        <strong>❌ Fehler beim Laden</strong><br>
+                        ${err.message}<br>
+                        <small>Siehe Console (F12) für Details</small>
+                    </div>
+                `;
+            }
+        }
+
+        function createRingChart(rings, werte) {
+            const ctx = document.getElementById('ringChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['🔵 Blau', '🌸 Rosa', '🟢 Grün', '⚪ Kein Ring'],
+                    datasets: [{
+                        data: [rings.Blau, rings.Rosa, rings.Grün, rings['Kein Ring']],
+                        backgroundColor: ['#4169E1', '#FF69B4', '#32CD32', '#D3D3D3'],
+                        borderColor: '#FFF8DC',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: { color: '#FFF8DC', font: { size: 14 } }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: ctx => {
+                                    const label = ctx.label || '';
+                                    const val = ctx.parsed || 0;
+                                    const key = ['Blau', 'Rosa', 'Grün', 'Kein Ring'][ctx.dataIndex];
+                                    return `${label}: ${val} Fl. (€${werte[key].toFixed(0)})`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function createCountryChart(countries) {
+            const ctx = document.getElementById('countryChart').getContext('2d');
+            const sorted = Object.entries(countries).sort((a, b) => b[1] - a[1]);
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: sorted.map(([k]) => k),
+                    datasets: [{
+                        label: 'Wert (€)',
+                        data: sorted.map(([, v]) => v),
+                        backgroundColor: '#D4AF37',
+                        borderColor: '#FFF8DC',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    indexAxis: 'y',
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: ctx => '€' + ctx.parsed.x.toFixed(0)
+                            }
+                        }
+                    },
+                    scales: {
+                        x: { 
+                            ticks: { color: '#FFF8DC' },
+                            grid: { color: 'rgba(255, 248, 220, 0.1)' }
+                        },
+                        y: { 
+                            ticks: { color: '#FFF8DC' },
+                            grid: { display: false }
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderTopList(id, items, valueFn) {
+            const html = items.map((w, i) => `
+                <li class="top-item">
+                    <span class="rank">${i + 1}</span>
+                    <span class="name">${w.produzent} ${w.weinname} ${w.jahrgang || ''}</span>
+                    <span class="value">${valueFn(w)}</span>
+                </li>
+            `).join('');
+            document.getElementById(id).innerHTML = html;
+        }
+
+        async function loadWeine() {
+            console.log('🍷 Lade Weine...');
+            try {
+                if (allWeine.length === 0) {
+                    const { data, error } = await sb
+                        .from('weine')
+                        .select('*')
+                        .order('position');
+                    if (error) throw error;
+                    allWeine = data;
+                }
+
+                renderWeine(allWeine.filter(w => !w.position.startsWith('GETRUNKEN')));
+
+                document.getElementById('search').addEventListener('input', filterWeine);
+                document.getElementById('ringFilter').addEventListener('change', filterWeine);
+
+                document.getElementById('weine-loading').style.display = 'none';
+                document.getElementById('weine-content').style.display = 'block';
+                weineLoaded = true;
+                console.log('✅ Weine fertig!');
+            } catch (err) {
+                console.error('💥 Weine Error:', err);
+                document.getElementById('weine-loading').innerHTML = `
+                    <div class="error">
+                        <strong>❌ Fehler beim Laden</strong><br>
+                        ${err.message}<br>
+                        <small>Siehe Console (F12) für Details</small>
+                    </div>
+                `;
+            }
+        }
+
+        function renderWeine(weine) {
+            const html = weine.map(w => {
+                const ringClass = w.ring ? `ring-${w.ring.toLowerCase()}` : '';
+                const ringEmoji = { Blau: '🔵', Rosa: '🌸', Grün: '🟢' }[w.ring] || '⚪';
+                return `
+                    <div class="wine-card ${ringClass}">
+                        <div class="wine-header">
+                            <div class="wine-name">${w.produzent} ${w.weinname}</div>
+                            <div class="wine-value">€${parseFloat(w.aktueller_wert || 0).toFixed(0)}</div>
+                        </div>
+                        <div class="wine-details">
+                            ${w.jahrgang || ''} | ${w.traube || ''} | ${w.flaschengroesse || ''}
+                        </div>
+                        <div class="wine-position">
+                            ${ringEmoji} ${w.position}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            document.getElementById('wine-grid').innerHTML = html;
+        }
+
+        function filterWeine() {
+            const search = document.getElementById('search').value.toLowerCase();
+            const ring = document.getElementById('ringFilter').value;
+
+            const filtered = allWeine
+                .filter(w => !w.position.startsWith('GETRUNKEN'))
+                .filter(w => {
+                    const matchSearch = !search || 
+                        w.produzent.toLowerCase().includes(search) ||
+                        w.weinname.toLowerCase().includes(search) ||
+                        w.position.toLowerCase().includes(search);
+                    
+                    const matchRing = !ring || (w.ring || '') === ring;
+                    
+                    return matchSearch && matchRing;
+                });
+
+            renderWeine(filtered);
+        }
+
+        console.log('🚀 Starte Dashboard...');
+        loadDashboard();
+    </script>
+</body>
+</html>
