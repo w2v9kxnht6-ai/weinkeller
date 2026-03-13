@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🍷 Weinkeller Dashboard 2026</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    
+    <style>
+        :root {
+            --wine-burgundy: #722f37;
+            --wine-gold: #d4af37;
+            --bg-light: #faf8f5;
+            --text-dark: #2c1810;
+            --text-light: #6b5750;
+            --shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #722f37 0%, #4a1f26 100%);
+            color: var(--text-dark);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            color: white;
+            margin-bottom: 2rem;
+        }
+        
+        h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 3rem;
+            margin-bottom: 0.5rem;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        }
+        
+        .subtitle {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        
+        .stat-card {
+            background: white;
+            border-radius: 16px;
+            padding: 1.5rem;
+            box-shadow: var(--shadow);
+            text-align: center;
+        }
+        
+        .stat-label {
+            font-size: 0.85rem;
+            color: var(--text-light);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 0.5rem;
+        }
+        
+        .stat-value {
+            font-family: 'Playfair Display', serif;
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--wine-burgundy);
+            margin: 0.5rem 0;
+        }
+        
+        .stat-sub {
+            font-size: 0.9rem;
+            color: var(--text-light);
+        }
+        
+        /* Charts */
+        .chart-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .chart-box {
+            background: white;
+            border-radius: 16px;
+            padding: 1.5rem;
+            box-shadow: var(--shadow);
+        }
+        
+        .chart-box h2 {
+            font-family: 'Playfair Display', serif;
+            color: var(--wine-burgundy);
+            margin-bottom: 1rem;
+            font-size: 1.5rem;
+            border-bottom: 2px solid var(--wine-burgundy);
+            padding-bottom: 0.5rem;
+        }
+        
+        .chart-box canvas {
+            max-height: 300px;
+        }
+        
+        /* Expandable Sections */
+        .section {
+            background: white;
+            border-radius: 16px;
+            margin-bottom: 1.5rem;
+            box-shadow: var(--shadow);
+            overflow: hidden;
+        }
+        
+        .section.alert {
+            border: 2px solid #ffc107;
+        }
+        
+        .section-header {
+            padding: 1.5rem;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: linear-gradient(135deg, #faf8f5 0%, #f8f5f2 100%);
+            transition: background 0.3s;
+        }
+        
+        .section-header:hover {
+            background: linear-gradient(135deg, #f5f2ef 0%, #f0ebe6 100%);
+        }
+        
+        .section-header h2 {
+            font-family: 'Playfair Display', serif;
+            color: var(--wine-burgundy);
+            font-size: 1.5rem;
+            margin: 0;
+        }
+        
+        .expand-icon {
+            font-size: 1.5rem;
+            color: var(--wine-burgundy);
+            transition: transform 0.3s;
+        }
+        
+        .section.open .expand-icon {
+            transform: rotate(180deg);
+        }
+        
+        .section-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.4s ease;
+        }
+        
+        .section.open .section-content {
+            max-height: 5000px;
+            padding: 1.5rem;
+            border-top: 1px solid #eee;
+        }
+        
+        /* Ring Cards */
+        .ring-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1rem;
+        }
+        
+        .ring-card {
+            padding: 1.5rem;
+            border-radius: 12px;
+            text-align: center;
+        }
+        
+        .ring-card.blau { background: linear-gradient(135deg, #e3f2fd, #bbdefb); }
+        .ring-card.gruen { background: linear-gradient(135deg, #e8f5e9, #c8e6c9); }
+        .ring-card.rosa { background: linear-gradient(135deg, #fce4ec, #f8bbd0); }
+        .ring-card.neutral { background: linear-gradient(135deg, #f5f5f5, #e0e0e0); }
+        
+        .ring-icon {
+            font-size: 3rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .ring-title {
+            font-weight: 600;
+            color: #666;
+            margin-bottom: 0.75rem;
+        }
+        
+        .ring-stats {
+            font-weight: 700;
+            font-size: 1.2rem;
+            color: var(--wine-burgundy);
+        }
+        
+        /* Wine List */
+        .wine-list {
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        
+        .wine-item {
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            background: #f8f5f2;
+            border-radius: 8px;
+            border-left: 4px solid var(--wine-burgundy);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .wine-item:hover {
+            background: #f0ebe6;
+            transform: translateX(3px);
+        }
+        
+        .wine-name {
+            font-weight: 700;
+            color: var(--wine-burgundy);
+            margin-bottom: 0.5rem;
+        }
+        
+        .wine-info {
+            font-size: 0.9rem;
+            color: #666;
+            margin-bottom: 0.25rem;
+        }
+        
+        .wine-ratings {
+            font-size: 0.85rem;
+            color: #999;
+        }
+        
+        /* Loading */
+        #loading {
+            text-align: center;
+            color: white;
+            font-size: 1.5rem;
+            padding: 3rem;
+        }
+        
+        #app {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="loading">📦 Lade Dashboard...</div>
+    
+    <div id="app">
+        <div class="container">
+            <header>
+                <h1>🍷 Weinkeller Dashboard</h1>
+                <div class="subtitle">Stand: <span id="date"></span></div>
+            </header>
+            
+            <!-- STATS -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-label">Flaschen Gesamt</div>
+                    <div class="stat-value" id="s-total">-</div>
+                    <div class="stat-sub"><span id="s-aktiv">-</span> aktiv · <span id="s-getrunken">-</span> getrunken</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Gesamtwert</div>
+                    <div class="stat-value" id="s-wert">-</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Investment</div>
+                    <div class="stat-value" id="s-ek">-</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Wertsteigerung</div>
+                    <div class="stat-value" id="s-gewinn">-</div>
+                    <div class="stat-sub" id="s-prozent">-</div>
+                </div>
+            </div>
+            
+            <!-- CHARTS -->
+            <div class="chart-row">
+                <div class="chart-box">
+                    <h2>🎨 Ring-Verteilung</h2>
+                    <canvas id="ringChart"></canvas>
+                </div>
+                <div class="chart-box">
+                    <h2>🌍 Portfolio nach Ländern</h2>
+                    <canvas id="countryChart"></canvas>
+                </div>
+            </div>
+            
+            <!-- RING DETAILS -->
+            <div class="section">
+                <div class="section-header" onclick="toggle('ring-details')">
+                    <h2>🎨 Ring-System Details</h2>
+                    <span class="expand-icon">▼</span>
+                </div>
+                <div id="ring-details" class="section-content">
+                    <div class="ring-grid">
+                        <div class="ring-card blau">
+                            <div class="ring-icon">🔵</div>
+                            <div class="ring-title">BLAU - Highlights</div>
+                            <div class="ring-stats" id="r-blau">-</div>
+                        </div>
+                        <div class="ring-card gruen">
+                            <div class="ring-icon">🟢</div>
+                            <div class="ring-title">GRÜN - Bis 2027</div>
+                            <div class="ring-stats" id="r-gruen">-</div>
+                        </div>
+                        <div class="ring-card rosa">
+                            <div class="ring-icon">🌸</div>
+                            <div class="ring-title">ROSA - 2026 trinken!</div>
+                            <div class="ring-stats" id="r-rosa">-</div>
+                        </div>
+                        <div class="ring-card neutral">
+                            <div class="ring-icon">⚪</div>
+                            <div class="ring-title">KEIN RING</div>
+                            <div class="ring-stats" id="r-kein">-</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- BLAUE HIGHLIGHTS -->
+            <div class="section">
+                <div class="section-header" onclick="toggle('highlights')">
+                    <h2>💎 Die Blauen Highlights</h2>
+                    <span class="expand-icon">▼</span>
+                </div>
+                <div id="highlights" class="section-content">
+                    <div id="highlights-list" class="wine-list"></div>
+                </div>
+            </div>
+            
+            <!-- TRINKEMPFEHLUNGEN -->
+            <div class="section alert">
+                <div class="section-header" onclick="toggle('drink')">
+                    <h2>⚠️ Handlungsbedarf - Jetzt trinken!</h2>
+                    <span class="expand-icon">▼</span>
+                </div>
+                <div id="drink" class="section-content">
+                    <div id="drink-content"></div>
+                </div>
+            </div>
+            
+            <!-- LÄNDER-PORTFOLIOS -->
+            <div class="section">
+                <div class="section-header" onclick="toggle('countries')">
+                    <h2>🌍 Portfolio nach Ländern</h2>
+                    <span class="expand-icon">▼</span>
+                </div>
+                <div id="countries" class="section-content">
+                    <div id="countries-content"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script type="module">
+        import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'
+        
+        const db = createClient(
+            'https://cdxmdavnspgczenhgjmk.supabase.co',
+            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNkeG1kYXZuc3BnY3plbmhnam1rIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExMDI2NDEsImV4cCI6MjA4NjY3ODY0MX0.HgoScNFXdOTFKmPn5lJuh7V0GAoABPz61p1JcjDovbE'
+        )
+        
+        let wines = []
+        let ringChart = null
+        let countryChart = null
+        
+        // Load Data
+        async function loadData() {
+            const { data, error } = await db.from('weine').select('*')
+            if (error) throw error
+            wines = data
+            render()
+        }
+        
+        // Toggle Sections
+        window.toggle = function(id) {
+            document.getElementById(id).closest('.section').classList.toggle('open')
+        }
+        
+        // Render Everything
+        function render() {
+            const aktiv = wines.filter(w => !w.position.startsWith('GETRUNKEN'))
+            const getr = wines.length - aktiv.length
+            const wert = aktiv.reduce((s,w) => s + (parseFloat(w.aktueller_wert)||0), 0)
+            const ek = aktiv.reduce((s,w) => s + (parseFloat(w.einkaufspreis)||0), 0)
+            const gew = wert - ek
+            const pct = ek > 0 ? (gew/ek*100) : 0
+            
+            // Stats
+            document.getElementById('date').textContent = new Date().toLocaleDateString('de-DE')
+            document.getElementById('s-total').textContent = wines.length
+            document.getElementById('s-aktiv').textContent = aktiv.length
+            document.getElementById('s-getrunken').textContent = getr
+            document.getElementById('s-wert').textContent = '€' + wert.toFixed(0)
+            document.getElementById('s-ek').textContent = '€' + ek.toFixed(0)
+            document.getElementById('s-gewinn').textContent = '+€' + gew.toFixed(0)
+            document.getElementById('s-prozent').textContent = '+' + pct.toFixed(1) + '%'
+            
+            // Rings
+            const rings = {Blau:0, Rosa:0, Grün:0, Kein:0}
+            const ringWerte = {Blau:0, Rosa:0, Grün:0, Kein:0}
+            aktiv.forEach(w => {
+                const r = w.ring || 'Kein'
+                rings[r]++
+                ringWerte[r] += parseFloat(w.aktueller_wert)||0
+            })
+            
+            document.getElementById('r-blau').textContent = rings.Blau + ' Fl. | €' + ringWerte.Blau.toFixed(0)
+            document.getElementById('r-gruen').textContent = rings.Grün + ' Fl. | €' + ringWerte.Grün.toFixed(0)
+            document.getElementById('r-rosa').textContent = rings.Rosa + ' Fl. | €' + ringWerte.Rosa.toFixed(0)
+            document.getElementById('r-kein').textContent = rings.Kein + ' Fl. | €' + ringWerte.Kein.toFixed(0)
+            
+            // Ring Chart
+            if (ringChart) ringChart.destroy()
+            ringChart = new Chart(document.getElementById('ringChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: ['🔵 Blau','🌸 Rosa','🟢 Grün','⚪ Kein'],
+                    datasets: [{
+                        data: [rings.Blau, rings.Rosa, rings.Grün, rings.Kein],
+                        backgroundColor: ['#4169E1','#FF69B4','#32CD32','#D3D3D3']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom' },
+                        tooltip: {
+                            callbacks: {
+                                label: (ctx) => {
+                                    const names = ['Blau','Rosa','Grün','Kein']
+                                    return ctx.label + ': ' + ctx.parsed + ' Fl. (€' + ringWerte[names[ctx.dataIndex]].toFixed(0) + ')'
+                                }
+                            }
+                        }
+                    }
+                }
+            })
+            
+            // Country Chart
+            const countries = {}
+            aktiv.forEach(w => {
+                let c = 'Andere'
+                if (w.produzent.includes('Fontodi')||w.produzent.includes('Fuligni')||w.produzent.includes('Antinori')||w.produzent.includes('Poliziano')||w.produzent.includes('Poggione')) c = 'Italien'
+                else if (w.produzent.includes('Château')||w.produzent.includes('Domaine')) c = 'Frankreich'
+                else if (w.produzent.includes('Kollwentz')||w.produzent.includes('Nittnaus')||w.produzent.includes('Pöckl')||w.produzent.includes('Tesch')||w.produzent.includes('Fritsch')) c = 'Österreich'
+                else if (w.produzent.includes('Marqués')||w.produzent.includes('Almez')||w.produzent.includes('Enate')) c = 'Spanien'
+                else if (w.produzent.includes('Damjanic')) c = 'Kroatien'
+                countries[c] = (countries[c]||0) + (parseFloat(w.aktueller_wert)||0)
+            })
+            const sorted = Object.entries(countries).sort((a,b) => b[1]-a[1])
+            
+            if (countryChart) countryChart.destroy()
+            countryChart = new Chart(document.getElementById('countryChart'), {
+                type: 'bar',
+                data: {
+                    labels: sorted.map(([k])=>k),
+                    datasets: [{ data: sorted.map(([,v])=>v), backgroundColor: '#722f37' }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    indexAxis: 'y',
+                    plugins: { legend: { display: false } }
+                }
+            })
+            
+            // Highlights
+            const blaue = aktiv.filter(w => w.ring === 'Blau').sort((a,b) => (parseFloat(b.aktueller_wert)||0) - (parseFloat(a.aktueller_wert)||0))
+            document.getElementById('highlights-list').innerHTML = blaue.map(w => 
+                '<div class="wine-item">' +
+                '<div class="wine-name">' + w.produzent + ' ' + w.weinname + ' ' + (w.jahrgang||'') + '</div>' +
+                '<div class="wine-info">' + (w.traube||'') + ' | €' + parseFloat(w.aktueller_wert||0).toFixed(0) + '</div>' +
+                '<div class="wine-ratings">' + (w.ratings||'') + '</div>' +
+                '</div>'
+            ).join('')
+            
+            // Trinkempfehlungen
+            const rosa = aktiv.filter(w => w.ring === 'Rosa')
+            const gruen = aktiv.filter(w => w.ring === 'Grün')
+            let drinkHTML = ''
+            if (rosa.length > 0) {
+                drinkHTML += '<h3 style="color:#ff1493;margin-bottom:1rem;">🌸 ' + rosa.length + ' ROSA - 2026 TRINKEN (AM PEAK!)</h3>'
+                drinkHTML += rosa.map(w => 
+                    '<div class="wine-item" style="border-left-color:#ff1493;">' +
+                    '<div class="wine-name">' + w.produzent + ' ' + w.weinname + ' ' + (w.jahrgang||'') + '</div>' +
+                    '<div class="wine-info">€' + parseFloat(w.aktueller_wert||0).toFixed(0) + ' | Trinkreife bis ' + (w.trinkreife_ende||'-') + '</div>' +
+                    '</div>'
+                ).join('')
+            }
+            if (gruen.length > 0) {
+                drinkHTML += '<h3 style="color:#32cd32;margin:2rem 0 1rem;">🟢 ' + gruen.length + ' GRÜN - Bis 2027</h3>'
+                drinkHTML += gruen.slice(0,15).map(w => 
+                    '<div class="wine-item" style="border-left-color:#32cd32;">' +
+                    '<div class="wine-name">' + w.produzent + ' ' + w.weinname + ' ' + (w.jahrgang||'') + '</div>' +
+                    '<div class="wine-info">€' + parseFloat(w.aktueller_wert||0).toFixed(0) + '</div>' +
+                    '</div>'
+                ).join('')
+                if (gruen.length > 15) {
+                    drinkHTML += '<div style="text-align:center;color:#666;margin-top:1rem;">...und ' + (gruen.length-15) + ' weitere</div>'
+                }
+            }
+            document.getElementById('drink-content').innerHTML = drinkHTML
+            
+            // Länder-Portfolios
+            let countryHTML = ''
+            sorted.forEach(([country, value]) => {
+                const countryWines = aktiv.filter(w => {
+                    if (country === 'Italien') return w.produzent.includes('Fontodi')||w.produzent.includes('Fuligni')||w.produzent.includes('Antinori')||w.produzent.includes('Poliziano')||w.produzent.includes('Poggione')
+                    if (country === 'Frankreich') return w.produzent.includes('Château')||w.produzent.includes('Domaine')
+                    if (country === 'Österreich') return w.produzent.includes('Kollwentz')||w.produzent.includes('Nittnaus')||w.produzent.includes('Pöckl')||w.produzent.includes('Tesch')||w.produzent.includes('Fritsch')
+                    if (country === 'Spanien') return w.produzent.includes('Marqués')||w.produzent.includes('Almez')||w.produzent.includes('Enate')
+                    if (country === 'Kroatien') return w.produzent.includes('Damjanic')
+                    return true
+                })
+                countryHTML += '<h3 style="margin-bottom:1rem;">' + country + ' (' + countryWines.length + ' Fl., €' + value.toFixed(0) + ')</h3>'
+                countryHTML += '<div style="margin-bottom:2rem;">' + countryWines.slice(0,10).map(w => 
+                    '<div class="wine-item">' +
+                    '<div class="wine-name">' + w.produzent + ' ' + w.weinname + ' ' + (w.jahrgang||'') + '</div>' +
+                    '<div class="wine-info">€' + parseFloat(w.aktueller_wert||0).toFixed(0) + '</div>' +
+                    '</div>'
+                ).join('') + '</div>'
+            })
+            document.getElementById('countries-content').innerHTML = countryHTML
+        }
+        
+        // Init
+        try {
+            await loadData()
+            document.getElementById('app').style.display = 'block'
+            document.getElementById('loading').style.display = 'none'
+        } catch (err) {
+            console.error(err)
+            document.getElementById('loading').textContent = '❌ Fehler: ' + err.message
+        }
+    </script>
+</body>
+</html>
