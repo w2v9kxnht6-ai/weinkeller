@@ -102,6 +102,7 @@ h1{margin:0;font-weight:700;font-size:38px;line-height:1;letter-spacing:-.02em}
 .login .err{margin-top:12px;color:var(--err);font-weight:600;font-size:14px}
 .login .skip{display:block;margin:18px auto 0;border:0;background:none;color:var(--muted);font-size:13px;text-decoration:underline}
 .toast{position:fixed;left:20px;right:20px;bottom:calc(env(safe-area-inset-bottom) + 76px);z-index:80;background:var(--ink);color:var(--ground);padding:12px 14px;border-radius:12px;font-size:14px}
+.upd{position:fixed;left:12px;right:12px;top:calc(env(safe-area-inset-top) + 8px);z-index:90;background:var(--ink);color:var(--ground);padding:12px 14px;border-radius:12px;font-size:14px;font-weight:600;text-align:center;cursor:pointer}
 .load{padding:40px 0;color:var(--muted);text-align:center}
 </style>
 </head>
@@ -113,7 +114,7 @@ h1{margin:0;font-weight:700;font-size:38px;line-height:1;letter-spacing:-.02em}
 <script>
 (function(){
 'use strict';
-var VERSION='v2.2.1 · 18.10.2026';
+var VERSION='v2.3.0 · 18.10.2026';
 var ALLOW_SKIP=false; /* entfernen, sobald die Policy auf Login umgestellt ist */
 var SUPA_URL='https://cdxmdavnspgczenhgjmk.supabase.co';
 var SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNkeG1kYXZuc3BnY3plbmhnam1rIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExMDI2NDEsImV4cCI6MjA4NjY3ODY0MX0.HgoScNFXdOTFKmPn5lJuh7V0GAoABPz61p1JcjDovbE';
@@ -125,7 +126,8 @@ var NOWPCT=Math.min(100,Math.max(0,((YEAR+THIS.getMonth()/12)-AX0)/(AX1-AX0)*100
 var RC={Rosa:'#C73E75',Grün:'#2B7F47',Blau:'#3566C4'};
 var SORTS=[['trinkende','Trinkende'],['name','Name'],['position','Position'],['wert','Einzelwert']];
 var SPECIAL=['Vor Regal','Linkes Regal','Rosaregal','OWC','LIEFERUNG'];
-var S={rows:[],session:null,tab:'keller',filter:'alle',sort:2,q:'',tfilter:'jetzt',gfilter:'getrunken',detail:null,sel:null,loading:true,error:'',sheet:null,toast:''};
+var S={rows:[],session:null,tab:'keller',filter:'alle',sort:2,q:'',tfilter:'jetzt',gfilter:'getrunken',detail:null,sel:null,loading:true,error:'',sheet:null,toast:'',newVer:''};
+var lastCheck=0,hiddenAt=0;
 
 function $(s,r){return (r||document).querySelector(s)}
 function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
@@ -238,7 +240,7 @@ function viewKeller(){
       '<div style="min-width:0"><div class="prod">'+esc(g.p.produzent)+(g.p.flaschengroesse&&!/^0[.,]75\s*l?$/i.test(String(g.p.flaschengroesse).trim())?' · '+esc(g.p.flaschengroesse):'')+'</div><div class="name">'+esc(g.title)+'</div>'+barHtml(g,false)+'<div class="meta">'+esc(ringTxt)+', '+esc(windowTxt(g))+'</div></div>'+
       '<div class="num"><b>'+g.n+' ×</b><span>'+eur(g.wert)+'</span></div></div>';
   });
-  h+='</div><div class="foot"><span>'+VERSION+'</span>'+(S.session?'<button data-act="logout">Abmelden</button>':'<span>ohne Anmeldung</span>')+'</div>';
+  h+='</div><div class="foot"><span>'+VERSION+' · <button data-act="refresh">Neu laden</button></span>'+(S.session?'<button data-act="logout">Abmelden</button>':'<span>ohne Anmeldung</span>')+'</div>';
   return h;
 }
 function viewTrink(){
@@ -386,7 +388,7 @@ function render(){
   app.innerHTML='<div class="scroll" id="sc">'+body+'</div>'+tabs;
   if(st)$('#sc').scrollTop=top;
   var det=S.detail&&!S.loading?viewDetail():'';
-  layer.innerHTML=(det?'<div class="detail" id="dt">'+det+'</div>':'')+sheetHtml()+(S.toast?'<div class="toast">'+esc(S.toast)+'</div>':'')+'';
+  layer.innerHTML=(det?'<div class="detail" id="dt">'+det+'</div>':'')+sheetHtml()+(S.toast?'<div class="toast">'+esc(S.toast)+'</div>':'')+(S.newVer?'<div class="upd" data-act="update">Neue Version '+esc(S.newVer)+' verfügbar. Tippen zum Laden.</div>':'');
   if(keepQ){var q=$('#q');if(q){q.focus();try{q.setSelectionRange(qpos,qpos)}catch(e){}}}
 }
 
@@ -453,6 +455,22 @@ function submitSheet(type){
   }
 }
 
+function checkVersion(){
+  lastCheck=Date.now();
+  var u=location.href.split('#')[0].split('?')[0];
+  if(!/^https?:/.test(u))return Promise.resolve();
+  return fetch(u+'?c='+Date.now(),{cache:'no-store'}).then(function(r){return r.ok?r.text():''}).then(function(t){
+    var m=t.match(/var VERSION='([^']+)'/);
+    if(m&&m[1]!==VERSION){S.newVer=m[1].split(' ')[0];render()}
+  }).catch(function(){});
+}
+document.addEventListener('visibilitychange',function(){
+  if(document.visibilityState==='hidden'){hiddenAt=Date.now();return}
+  if(needLogin&&!S.session)return;
+  if(hiddenAt&&Date.now()-hiddenAt>30000&&!S.sheet){load()}
+  if(Date.now()-lastCheck>300000)checkVersion();
+});
+
 /* ---------- Events ---------- */
 document.addEventListener('click',function(ev){
   var t=ev.target.closest('[data-act]');if(!t)return;
@@ -471,6 +489,8 @@ document.addEventListener('click',function(ev){
   else if(a==='logout'){sb.auth.signOut().then(function(){S.session=null;needLogin=true;render()})}
   else if(a==='skip'){needLogin=false;load()}
   else if(a==='reload'){load()}
+  else if(a==='refresh'){load().then(function(){toast('Daten aktualisiert')});checkVersion()}
+  else if(a==='update'){location.replace(location.href.split('#')[0].split('?')[0]+'?v='+Date.now())}
 });
 document.addEventListener('input',function(ev){
   if(ev.target.id==='q'){S.q=ev.target.value;render()}
@@ -497,6 +517,7 @@ function start(){
     S.session=res.data&&res.data.session||null;
     needLogin=!S.session;
     if(S.session)load();else render();
+    checkVersion();
   });
   sb.auth.onAuthStateChange(function(ev,session){if(ev==='SIGNED_OUT'){S.session=null;needLogin=true;render()}});
 }
