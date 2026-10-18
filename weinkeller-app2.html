@@ -29,7 +29,7 @@ h1{margin:0;font-weight:700;font-size:44px;line-height:1;letter-spacing:-.02em}
 .stat b{font-size:18px}
 .search{display:flex;align-items:center;gap:10px;margin-top:16px;height:44px;padding:0 14px;border:1px solid var(--field);border-radius:10px;background:#F8FAF6}
 .search input{flex:1;min-width:0;border:0;outline:0;background:transparent;font-size:16px}
-.chips{display:flex;gap:16px;margin-top:12px;border-bottom:1px solid var(--line);overflow-x:auto;white-space:nowrap;scrollbar-width:none}
+.chips{display:flex;gap:12px;margin-top:12px;border-bottom:1px solid var(--line);overflow-x:auto;white-space:nowrap;scrollbar-width:none}
 .chips::-webkit-scrollbar{display:none}
 .chips button{display:flex;align-items:center;gap:6px;border:0;background:none;padding:8px 0 10px;font-size:14px;margin-bottom:-1px;border-bottom:2px solid transparent;flex:none}
 .chips button.on{font-weight:700;border-bottom-color:var(--ink)}
@@ -110,7 +110,7 @@ h1{margin:0;font-weight:700;font-size:44px;line-height:1;letter-spacing:-.02em}
 <script>
 (function(){
 'use strict';
-var VERSION='v2.0.4 · 18.10.2026';
+var VERSION='v2.0.5 · 18.10.2026';
 var ALLOW_SKIP=true; /* entfernen, sobald die Policy auf Login umgestellt ist */
 var SUPA_URL='https://cdxmdavnspgczenhgjmk.supabase.co';
 var SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNkeG1kYXZuc3BnY3plbmhnam1rIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExMDI2NDEsImV4cCI6MjA4NjY3ODY0MX0.HgoScNFXdOTFKmPn5lJuh7V0GAoABPz61p1JcjDovbE';
@@ -203,8 +203,8 @@ function chipsKeller(){
   var live=kellerRows();
   var c={alle:live.length,Rosa:0,Grün:0,Blau:0,ohne:0,lief:kellerRows().filter(isLief).length};
   live.forEach(function(r){var k=ringOf(r);if(k)c[k]++;else c.ohne++});
-  var defs=[['alle','Alle '+c.alle,''],['Rosa','Rosa '+c.Rosa,RC.Rosa],['Grün','Grün '+c['Grün'],RC['Grün']],['Blau','Blau '+c.Blau,RC.Blau],['ohne','Ohne '+c.ohne,''],['lief','Lieferung '+c.lief,'']];
-  return '<div class="chips">'+defs.map(function(d){return '<button data-act="filter" data-v="'+d[0]+'" class="'+(S.filter===d[0]?'on':'')+'">'+(d[2]?'<span class="sq" style="background:'+d[2]+'"></span>':'')+esc(d[1])+'</button>'}).join('')+'</div>';
+  var defs=[['alle','Alle '+c.alle,''],['Rosa',''+c.Rosa,RC.Rosa],['Grün',''+c['Grün'],RC['Grün']],['Blau',''+c.Blau,RC.Blau],['ohne','Ohne '+c.ohne,''],['lief','Lieferung '+c.lief,'']];
+  return '<div class="chips">'+defs.map(function(d){return '<button data-act="filter" data-v="'+d[0]+'" aria-label="'+esc(d[0])+'" class="'+(S.filter===d[0]?'on':'')+'">'+(d[2]?'<span class="sq" style="background:'+d[2]+'"></span>':'')+esc(d[1])+'</button>'}).join('')+'</div>';
 }
 function viewKeller(){
   var all=kellerRows();
