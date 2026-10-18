@@ -120,7 +120,7 @@ h1{margin:0;font-weight:700;font-size:38px;line-height:1;letter-spacing:-.02em}
 <script>
 (function(){
 'use strict';
-var VERSION='v2.4.0 · 18.10.2026';
+var VERSION='v2.4.1 · 18.10.2026';
 var ALLOW_SKIP=false; /* entfernen, sobald die Policy auf Login umgestellt ist */
 var SUPA_URL='https://cdxmdavnspgczenhgjmk.supabase.co';
 var SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNkeG1kYXZuc3BnY3plbmhnam1rIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExMDI2NDEsImV4cCI6MjA4NjY3ODY0MX0.HgoScNFXdOTFKmPn5lJuh7V0GAoABPz61p1JcjDovbE';
@@ -132,7 +132,7 @@ var NOWPCT=Math.min(100,Math.max(0,((YEAR+THIS.getMonth()/12)-AX0)/(AX1-AX0)*100
 var RC={Rosa:'#C73E75',Grün:'#2B7F47',Blau:'#3566C4'};
 var SORTS=[['trinkende','Trinkende'],['name','Name'],['position','Position'],['wert','Einzelwert'],['jahrgang','Jahrgang']];
 var SPECIAL=['Vor Regal','Linkes Regal','Rosaregal','OWC','LIEFERUNG'];
-var S={rows:[],session:null,tab:'keller',filter:'alle',sort:2,q:'',tfilter:'jetzt',gfilter:'getrunken',detail:null,sel:null,loading:true,error:'',sheet:null,toast:'',newVer:'',f:{art:'',land:'',region:'',jg:''},fsheet:false};
+var S={rows:[],session:null,tab:'keller',filter:'alle',sort:2,q:'',tfilter:'jetzt',gfilter:'getrunken',detail:null,sel:null,loading:true,error:'',sheet:null,toast:'',newVer:'',f:{art:[],land:[],region:[],jg:[]},fsheet:false};
 var FLAG={'Frankreich':'🇫🇷','Österreich':'🇦🇹','Italien':'🇮🇹','Spanien':'🇪🇸','Ungarn':'🇭🇺','Kroatien':'🇭🇷','Deutschland':'🇩🇪','Portugal':'🇵🇹','Slowenien':'🇸🇮','Schweiz':'🇨🇭','USA':'🇺🇸'};
 var ARTC={'Rotwein':'#A8324F','Weißwein':'#C9B458','Roséwein':'#E58FA8','Schaumwein':'#7FB6C9','Dessertwein':'#C98A3A'};
 var ARTS=['Rotwein','Weißwein','Roséwein','Schaumwein','Dessertwein'];
@@ -155,8 +155,9 @@ function posKey(p){p=String(p||'');var m=p.match(/^([A-L])([1-7])$/i);if(m)retur
 function flag(l){return FLAG[l]||''}
 function jgOf(r){return r.jahrgang?String(r.jahrgang):'ohne'}
 function fval(r,k){return k==='jg'?jgOf(r):(r[FCOL[k]]||'')}
-function passF(r,skip){for(var i=0;i<FK.length;i++){var k=FK[i];if(k===skip)continue;if(S.f[k]&&fval(r,k)!==S.f[k])return false}return true}
-function fcount(){return FK.filter(function(k){return S.f[k]}).length}
+function passF(r,skip){for(var i=0;i<FK.length;i++){var k=FK[i];if(k===skip)continue;if(S.f[k].length&&S.f[k].indexOf(fval(r,k))<0)return false}return true}
+function fcount(){return FK.reduce(function(n,k){return n+S.f[k].length},0)}
+function fclean(){var ok={};kellerRows().forEach(function(r){if(S.f.land.length&&S.f.land.indexOf(r.land)<0)return;ok[r.region]=1});S.f.region=S.f.region.filter(function(x){return ok[x]})}
 function facet(k){var m={};kellerRows().forEach(function(r){if(!passF(r,k))return;var v=fval(r,k);if(!v)return;m[v]=(m[v]||0)+1});return m}
 function keyOf(r){return [r.produzent,r.weinname,r.jahrgang,r.flaschengroesse].map(function(x){return (x==null?'':String(x)).trim().toLowerCase()}).join('|')}
 function pct(y){return Math.max(0,Math.min(100,(y-AX0)/(AX1-AX0)*100))}
@@ -252,7 +253,7 @@ function viewKeller(){
   h+=chipsKeller();
   var nf=fcount();
   h+='<div class="fbar"><button class="pill'+(nf?' act':'')+'" data-act="fopen">Filter'+(nf?' · '+nf:'')+'</button>';
-  FK.forEach(function(k){if(S.f[k])h+='<button class="pill act" data-act="fclr" data-v="'+k+'">'+(k==='land'?flag(S.f[k])+' ':'')+esc(S.f[k])+' ×</button>'});
+  FK.forEach(function(k){S.f[k].forEach(function(x){h+='<button class="pill act" data-act="fclr" data-k="'+k+'" data-v="'+esc(x)+'">'+(k==='land'?flag(x)+' ':'')+esc(x)+' ×</button>'})});
   h+='</div>';
   h+='<div class="subbar"><span>Balken: Trinkfenster '+AX0+' bis '+AX1+'. Linie: heute</span><button class="pill" data-act="sort">'+SORTS[S.sort][1]+'</button></div>';
   h+='<div style="margin-top:8px">';
@@ -390,17 +391,17 @@ function fsheetHtml(){
   var n=kellerRows().filter(function(r){return passF(r)}).length;
   function sec(title,k,list,lab){
     h+='<div class="fsec">'+esc(title)+'</div><div class="quick">';
-    list.forEach(function(x){h+='<button type="button" data-act="fset" data-k="'+k+'" data-v="'+esc(x[0])+'" class="'+(S.f[k]===x[0]?'on':'')+'">'+(lab?lab(x[0]):'')+esc(x[0])+' '+x[1]+'</button>'});
+    list.forEach(function(x){h+='<button type="button" data-act="fset" data-k="'+k+'" data-v="'+esc(x[0])+'" class="'+(S.f[k].indexOf(x[0])>=0?'on':'')+'">'+(lab?lab(x[0]):'')+esc(x[0])+' '+x[1]+'</button>'});
     h+='</div>';
   }
   var fa=facet('art'),fl=facet('land'),fr=facet('region'),fj=facet('jg');
-  sec('Weinart','art',ARTS.filter(function(a){return fa[a]||S.f.art===a}).map(function(a){return [a,fa[a]||0]}),function(a){return '<span class="sq" style="background:'+ARTC[a]+'"></span> '});
+  sec('Weinart','art',ARTS.filter(function(a){return fa[a]||S.f.art.indexOf(a)>=0}).map(function(a){return [a,fa[a]||0]}),function(a){return '<span class="sq" style="background:'+ARTC[a]+'"></span> '});
   sec('Land','land',Object.keys(fl).sort(function(a,b){return fl[b]-fl[a]}).map(function(a){return [a,fl[a]]}),function(a){return flag(a)+' '});
   var rk=Object.keys(fr).sort(function(a,b){return fr[b]-fr[a]||(a<b?-1:1)});
   if(rk.length)sec('Region','region',rk.map(function(a){return [a,fr[a]]}));
   var jk=Object.keys(fj).sort(function(a,b){return a==='ohne'?1:b==='ohne'?-1:b-a});
   sec('Jahrgang','jg',jk.map(function(a){return [a,fj[a]]}));
-  h+='<p class="info">Zahlen: Flaschen (ohne Ring-Auswahl).</p>';
+  h+='<p class="info">Mehrfachauswahl: innerhalb einer Gruppe gilt oder, zwischen Gruppen und. Zahlen sind Flaschen.</p>';
   h+='<div class="btns"><button type="button" class="btn" data-act="freset">Zurücksetzen</button><button type="button" class="btn pri" data-act="fclose">Fertig ('+n+')</button></div></div></div>';
   return h;
 }
@@ -524,9 +525,9 @@ document.addEventListener('click',function(ev){
   else if(a==='gfilter'){S.gfilter=v;render()}
   else if(a==='fopen'){S.fsheet=true;render()}
   else if(a==='fclose'){if(ev.target.closest('[data-stop]')&&t.classList.contains('ov')&&ev.target.closest('.sheet'))return;S.fsheet=false;render()}
-  else if(a==='fset'){var k=t.getAttribute('data-k');S.f[k]=S.f[k]===v?'':v;if(k==='land')S.f.region='';render()}
-  else if(a==='fclr'){S.f[v]='';if(v==='land')S.f.region='';render()}
-  else if(a==='freset'){S.f={art:'',land:'',region:'',jg:''};render()}
+  else if(a==='fset'){var k=t.getAttribute('data-k'),i=S.f[k].indexOf(v);if(i>=0)S.f[k].splice(i,1);else S.f[k].push(v);if(k==='land')fclean();render()}
+  else if(a==='fclr'){var k2=t.getAttribute('data-k'),i2=S.f[k2].indexOf(v);if(i2>=0)S.f[k2].splice(i2,1);if(k2==='land')fclean();render()}
+  else if(a==='freset'){S.f={art:[],land:[],region:[],jg:[]};render()}
   else if(a==='sort'){S.sort=(S.sort+1)%SORTS.length;render()}
   else if(a==='open'){S.detail=t.getAttribute('data-k');S.sel=null;render()}
   else if(a==='back'){S.detail=null;S.sel=null;render()}
