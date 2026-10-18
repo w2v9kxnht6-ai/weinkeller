@@ -93,6 +93,12 @@ h1{margin:0;font-weight:700;font-size:38px;line-height:1;letter-spacing:-.02em}
 .sheet .btns{display:grid;grid-template-columns:1fr 1.4fr;gap:10px;margin-top:18px}
 .quick{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
 .quick button{border:1px solid var(--field);border-radius:999px;background:none;padding:5px 11px;font-size:13px}
+/* Filter */
+.fbar{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.pill.act{background:var(--ink);color:var(--ground);border-color:var(--ink)}
+.fsec{margin-top:16px;font-size:13px;color:var(--muted)}
+.quick button.on{background:var(--ink);color:var(--ground);border-color:var(--ink)}
+.jg{font-variant-numeric:tabular-nums;margin-right:7px}
 /* Login */
 .login{position:fixed;inset:0;background:var(--ground);z-index:60;display:flex;flex-direction:column;justify-content:center;padding:24px 28px}
 .login form{max-width:380px;width:100%;margin:0 auto}
@@ -114,7 +120,7 @@ h1{margin:0;font-weight:700;font-size:38px;line-height:1;letter-spacing:-.02em}
 <script>
 (function(){
 'use strict';
-var VERSION='v2.3.0 · 18.10.2026';
+var VERSION='v2.4.0 · 18.10.2026';
 var ALLOW_SKIP=false; /* entfernen, sobald die Policy auf Login umgestellt ist */
 var SUPA_URL='https://cdxmdavnspgczenhgjmk.supabase.co';
 var SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNkeG1kYXZuc3BnY3plbmhnam1rIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExMDI2NDEsImV4cCI6MjA4NjY3ODY0MX0.HgoScNFXdOTFKmPn5lJuh7V0GAoABPz61p1JcjDovbE';
@@ -124,9 +130,14 @@ var THIS=new Date();
 var YEAR=THIS.getFullYear();
 var NOWPCT=Math.min(100,Math.max(0,((YEAR+THIS.getMonth()/12)-AX0)/(AX1-AX0)*100));
 var RC={Rosa:'#C73E75',Grün:'#2B7F47',Blau:'#3566C4'};
-var SORTS=[['trinkende','Trinkende'],['name','Name'],['position','Position'],['wert','Einzelwert']];
+var SORTS=[['trinkende','Trinkende'],['name','Name'],['position','Position'],['wert','Einzelwert'],['jahrgang','Jahrgang']];
 var SPECIAL=['Vor Regal','Linkes Regal','Rosaregal','OWC','LIEFERUNG'];
-var S={rows:[],session:null,tab:'keller',filter:'alle',sort:2,q:'',tfilter:'jetzt',gfilter:'getrunken',detail:null,sel:null,loading:true,error:'',sheet:null,toast:'',newVer:''};
+var S={rows:[],session:null,tab:'keller',filter:'alle',sort:2,q:'',tfilter:'jetzt',gfilter:'getrunken',detail:null,sel:null,loading:true,error:'',sheet:null,toast:'',newVer:'',f:{art:'',land:'',region:'',jg:''},fsheet:false};
+var FLAG={'Frankreich':'🇫🇷','Österreich':'🇦🇹','Italien':'🇮🇹','Spanien':'🇪🇸','Ungarn':'🇭🇺','Kroatien':'🇭🇷','Deutschland':'🇩🇪','Portugal':'🇵🇹','Slowenien':'🇸🇮','Schweiz':'🇨🇭','USA':'🇺🇸'};
+var ARTC={'Rotwein':'#A8324F','Weißwein':'#C9B458','Roséwein':'#E58FA8','Schaumwein':'#7FB6C9','Dessertwein':'#C98A3A'};
+var ARTS=['Rotwein','Weißwein','Roséwein','Schaumwein','Dessertwein'];
+var FK=['art','land','region','jg'];
+var FCOL={art:'weinart',land:'land',region:'region'};
 var lastCheck=0,hiddenAt=0;
 
 function $(s,r){return (r||document).querySelector(s)}
@@ -141,6 +152,12 @@ function isLief(r){return String(r.position||'').toUpperCase()==='LIEFERUNG'}
 function year(v){if(v==null)return null;var m=String(v).match(/\d{4}/);return m?parseInt(m[0],10):null}
 function fmtDate(d){if(!d)return '';var p=String(d).split('-');return p.length===3?(+p[2])+'.'+(+p[1])+'.'+p[0]:d}
 function posKey(p){p=String(p||'');var m=p.match(/^([A-L])([1-7])$/i);if(m)return m[1].toUpperCase().charCodeAt(0)*10+ +m[2]-650;var i=SPECIAL.indexOf(p);return 200+(i<0?9:i)*10}
+function flag(l){return FLAG[l]||''}
+function jgOf(r){return r.jahrgang?String(r.jahrgang):'ohne'}
+function fval(r,k){return k==='jg'?jgOf(r):(r[FCOL[k]]||'')}
+function passF(r,skip){for(var i=0;i<FK.length;i++){var k=FK[i];if(k===skip)continue;if(S.f[k]&&fval(r,k)!==S.f[k])return false}return true}
+function fcount(){return FK.filter(function(k){return S.f[k]}).length}
+function facet(k){var m={};kellerRows().forEach(function(r){if(!passF(r,k))return;var v=fval(r,k);if(!v)return;m[v]=(m[v]||0)+1});return m}
 function keyOf(r){return [r.produzent,r.weinname,r.jahrgang,r.flaschengroesse].map(function(x){return (x==null?'':String(x)).trim().toLowerCase()}).join('|')}
 function pct(y){return Math.max(0,Math.min(100,(y-AX0)/(AX1-AX0)*100))}
 
@@ -161,7 +178,7 @@ function groups(filterFn){
     g.rows.forEach(function(r){var a=year(r.trinkreife_start),b=year(r.trinkreife_ende);if(a!=null&&(s==null||a<s))s=a;if(b!=null&&(e==null||b>e)){e=b;open=/\+/.test(String(r.trinkreife_ende))}});
     g.von=s;g.ende=e;g.open=open;
     g.wert=num(p.aktueller_wert)||0;
-    g.title=(p.weinname||'')+(p.jahrgang?' '+p.jahrgang:'');
+    g.title=(p.weinname||'')+(p.jahrgang?' '+p.jahrgang:'');g.name=p.weinname||'';g.jg=p.jahrgang?String(p.jahrgang):'NV';
     var pc={},po=[];
     g.rows.forEach(function(r){var k=r.position||'–';if(!pc[k]){pc[k]=0;po.push(k)}pc[k]++});
     po.sort(function(x,y){return pc[y]-pc[x]||posKey(x)-posKey(y)});
@@ -176,7 +193,7 @@ function kellerRows(){return S.rows.filter(function(r){return !isDrunk(r)})}
 function match(g,q){
   if(!q)return true;
   q=q.toLowerCase();
-  var hay=[g.p.produzent,g.p.weinname,g.p.jahrgang,g.p.traube,g.p.flaschengroesse].join(' ').toLowerCase();
+  var hay=[g.p.produzent,g.p.weinname,g.p.jahrgang,g.p.traube,g.p.flaschengroesse,g.p.weinart,g.p.land,g.p.region].join(' ').toLowerCase();
   if(hay.indexOf(q)>=0)return true;
   return g.rows.some(function(r){return String(r.id)===q||String(r.position||'').toLowerCase().indexOf(q)>=0});
 }
@@ -185,6 +202,7 @@ function sortGroups(a,mode){
   var nm=function(g){return ((g.p.produzent||'')+' '+(g.p.weinname||'')+' '+(g.p.jahrgang||'')).toLowerCase()};
   if(mode==='name')a.sort(function(x,y){return nm(x)<nm(y)?-1:1});
   else if(mode==='position')a.sort(function(x,y){return x.posSort-y.posSort||(nm(x)<nm(y)?-1:1)});
+  else if(mode==='jahrgang')a.sort(function(x,y){var jx=x.p.jahrgang||9999,jy=y.p.jahrgang||9999;return jx-jy||(nm(x)<nm(y)?-1:1)});
   else if(mode==='wert')a.sort(function(x,y){return y.wert-x.wert});
   else a.sort(function(x,y){var ex=x.ende==null?9999:x.ende,ey=y.ende==null?9999:y.ende;return ex-ey||(nm(x)<nm(y)?-1:1)});
   return a;
@@ -217,6 +235,7 @@ function viewKeller(){
   var lief=all.filter(isLief);
   var f=S.filter;
   var base=all.filter(function(r){
+    if(!passF(r))return false;
     if(f==='lief')return isLief(r);
     if(f==='alle')return true;
     if(f==='ohne')return !ringOf(r);
@@ -231,13 +250,17 @@ function viewKeller(){
   var h='<div class="head"><h1>Weinkeller</h1><div class="stat"><small>'+inh.length+' Flaschen</small><br><b>'+eur(tot)+'</b> <small>Wert</small>'+(lief.length?'<br><small>+ Lieferung '+lief.length+' ('+eur(lw)+')</small>':'')+'</div></div>';
   h+='<label class="search"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#44534A" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg><input id="q" type="search" placeholder="Wein, Produzent, Traube oder ID" value="'+esc(S.q)+'" autocomplete="off"></label>';
   h+=chipsKeller();
+  var nf=fcount();
+  h+='<div class="fbar"><button class="pill'+(nf?' act':'')+'" data-act="fopen">Filter'+(nf?' · '+nf:'')+'</button>';
+  FK.forEach(function(k){if(S.f[k])h+='<button class="pill act" data-act="fclr" data-v="'+k+'">'+(k==='land'?flag(S.f[k])+' ':'')+esc(S.f[k])+' ×</button>'});
+  h+='</div>';
   h+='<div class="subbar"><span>Balken: Trinkfenster '+AX0+' bis '+AX1+'. Linie: heute</span><button class="pill" data-act="sort">'+SORTS[S.sort][1]+'</button></div>';
   h+='<div style="margin-top:8px">';
   if(!gs.length)h+='<div class="empty">Keine Treffer.</div>';
   gs.forEach(function(g){
     var ringTxt=g.ring||'kein Ring';
     h+='<div class="row" data-act="open" data-k="'+esc(g.key)+'"><div class="pos">'+esc(g.posTxt)+(g.posSub?'<small>'+esc(g.posSub)+'</small>':'')+'</div>'+
-      '<div style="min-width:0"><div class="prod">'+esc(g.p.produzent)+(g.p.flaschengroesse&&!/^0[.,]75\s*l?$/i.test(String(g.p.flaschengroesse).trim())?' · '+esc(g.p.flaschengroesse):'')+'</div><div class="name">'+esc(g.title)+'</div>'+barHtml(g,false)+'<div class="meta">'+esc(ringTxt)+', '+esc(windowTxt(g))+'</div></div>'+
+      '<div style="min-width:0"><div class="prod">'+(g.p.land?flag(g.p.land)+' ':'')+esc(g.p.produzent)+(g.p.region?' · '+esc(g.p.region):'')+(g.p.flaschengroesse&&!/^0[.,]75\s*l?$/i.test(String(g.p.flaschengroesse).trim())?' · '+esc(g.p.flaschengroesse):'')+'</div><div class="name"><b class="jg">'+esc(g.jg)+'</b>'+esc(g.name)+'</div>'+barHtml(g,false)+'<div class="meta">'+(g.p.weinart?'<span class="sq" style="background:'+(ARTC[g.p.weinart]||'#999')+'"></span> '+esc(g.p.weinart)+', ':'')+esc(ringTxt)+', '+esc(windowTxt(g))+'</div></div>'+
       '<div class="num"><b>'+g.n+' ×</b><span>'+eur(g.wert)+'</span></div></div>';
   });
   h+='</div><div class="foot"><span>'+VERSION+' · <button data-act="refresh">Neu laden</button></span>'+(S.session?'<button data-act="logout">Abmelden</button>':'<span>ohne Anmeldung</span>')+'</div>';
@@ -305,7 +328,7 @@ function viewDetail(){
   h+='<div style="display:flex;justify-content:space-between;margin-top:8px;font-size:13px;color:var(--muted)"><span>'+esc(g.ring||'kein Ring')+', '+esc(windowTxt(g))+'</span><span style="font-weight:600;color:var(--ink)">'+(g.ende!=null?(g.ende<YEAR?'vorbei':'bis '+g.ende+(g.open?'+':'')):'')+'</span></div>';
   var kv=[];
   function add(k,v){if(v!=null&&String(v).trim()!=='')kv.push([k,v])}
-  add('Traube',p.traube);add('Alkohol',p.alkohol);add('Restzucker',p.restzucker);
+  add('Jahrgang',p.jahrgang);add('Weinart',p.weinart);add('Land',p.land?flag(p.land)+' '+p.land:'');add('Region',p.region);add('Traube',p.traube);add('Alkohol',p.alkohol);add('Restzucker',p.restzucker);
   kv.push(['Säure',p.saeure!=null?String(p.saeure).replace('.',',')+' g/l':'–']);
   add('Ausbau',p.ausbau);add('Dekantieren',p.dekantierzeit);add('Flaschengröße',p.flaschengroesse);add('Bewertungen',p.ratings?String(p.ratings).replace(/\|/g,' · '):'');
   var ek=num(p.einkaufspreis),wt=num(p.aktueller_wert);
@@ -361,6 +384,26 @@ function sheetHtml(){
   h+='<div class="btns"><button type="button" class="btn" data-act="closesheet">Abbrechen</button><button type="submit" class="btn pri" id="f-ok">Speichern</button></div></form></div>';
   return h;
 }
+function fsheetHtml(){
+  if(!S.fsheet)return '';
+  var h='<div class="ov" data-act="fclose"><div class="sheet" data-stop="1"><h2>Filter</h2>';
+  var n=kellerRows().filter(function(r){return passF(r)}).length;
+  function sec(title,k,list,lab){
+    h+='<div class="fsec">'+esc(title)+'</div><div class="quick">';
+    list.forEach(function(x){h+='<button type="button" data-act="fset" data-k="'+k+'" data-v="'+esc(x[0])+'" class="'+(S.f[k]===x[0]?'on':'')+'">'+(lab?lab(x[0]):'')+esc(x[0])+' '+x[1]+'</button>'});
+    h+='</div>';
+  }
+  var fa=facet('art'),fl=facet('land'),fr=facet('region'),fj=facet('jg');
+  sec('Weinart','art',ARTS.filter(function(a){return fa[a]||S.f.art===a}).map(function(a){return [a,fa[a]||0]}),function(a){return '<span class="sq" style="background:'+ARTC[a]+'"></span> '});
+  sec('Land','land',Object.keys(fl).sort(function(a,b){return fl[b]-fl[a]}).map(function(a){return [a,fl[a]]}),function(a){return flag(a)+' '});
+  var rk=Object.keys(fr).sort(function(a,b){return fr[b]-fr[a]||(a<b?-1:1)});
+  if(rk.length)sec('Region','region',rk.map(function(a){return [a,fr[a]]}));
+  var jk=Object.keys(fj).sort(function(a,b){return a==='ohne'?1:b==='ohne'?-1:b-a});
+  sec('Jahrgang','jg',jk.map(function(a){return [a,fj[a]]}));
+  h+='<p class="info">Zahlen: Flaschen (ohne Ring-Auswahl).</p>';
+  h+='<div class="btns"><button type="button" class="btn" data-act="freset">Zurücksetzen</button><button type="button" class="btn pri" data-act="fclose">Fertig ('+n+')</button></div></div></div>';
+  return h;
+}
 function loginHtml(){
   return '<div class="login"><form id="lf"><h1>Weinkeller</h1><div style="margin-top:6px;color:var(--muted);font-size:15px">Anmelden</div>'+
   '<label>E-Mail<input id="l-mail" type="email" autocomplete="username" autocapitalize="off" required></label>'+
@@ -388,7 +431,7 @@ function render(){
   app.innerHTML='<div class="scroll" id="sc">'+body+'</div>'+tabs;
   if(st)$('#sc').scrollTop=top;
   var det=S.detail&&!S.loading?viewDetail():'';
-  layer.innerHTML=(det?'<div class="detail" id="dt">'+det+'</div>':'')+sheetHtml()+(S.toast?'<div class="toast">'+esc(S.toast)+'</div>':'')+(S.newVer?'<div class="upd" data-act="update">Neue Version '+esc(S.newVer)+' verfügbar. Tippen zum Laden.</div>':'');
+  layer.innerHTML=(det?'<div class="detail" id="dt">'+det+'</div>':'')+sheetHtml()+fsheetHtml()+(S.toast?'<div class="toast">'+esc(S.toast)+'</div>':'')+(S.newVer?'<div class="upd" data-act="update">Neue Version '+esc(S.newVer)+' verfügbar. Tippen zum Laden.</div>':'');
   if(keepQ){var q=$('#q');if(q){q.focus();try{q.setSelectionRange(qpos,qpos)}catch(e){}}}
 }
 
@@ -479,6 +522,11 @@ document.addEventListener('click',function(ev){
   else if(a==='filter'){S.filter=v;render()}
   else if(a==='tfilter'){S.tfilter=v;render()}
   else if(a==='gfilter'){S.gfilter=v;render()}
+  else if(a==='fopen'){S.fsheet=true;render()}
+  else if(a==='fclose'){if(ev.target.closest('[data-stop]')&&t.classList.contains('ov')&&ev.target.closest('.sheet'))return;S.fsheet=false;render()}
+  else if(a==='fset'){var k=t.getAttribute('data-k');S.f[k]=S.f[k]===v?'':v;if(k==='land')S.f.region='';render()}
+  else if(a==='fclr'){S.f[v]='';if(v==='land')S.f.region='';render()}
+  else if(a==='freset'){S.f={art:'',land:'',region:'',jg:''};render()}
   else if(a==='sort'){S.sort=(S.sort+1)%SORTS.length;render()}
   else if(a==='open'){S.detail=t.getAttribute('data-k');S.sel=null;render()}
   else if(a==='back'){S.detail=null;S.sel=null;render()}
