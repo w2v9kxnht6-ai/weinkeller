@@ -113,7 +113,7 @@ h1{margin:0;font-weight:700;font-size:38px;line-height:1;letter-spacing:-.02em}
 <script>
 (function(){
 'use strict';
-var VERSION='v2.2.0 · 18.10.2026';
+var VERSION='v2.2.1 · 18.10.2026';
 var ALLOW_SKIP=false; /* entfernen, sobald die Policy auf Login umgestellt ist */
 var SUPA_URL='https://cdxmdavnspgczenhgjmk.supabase.co';
 var SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNkeG1kYXZuc3BnY3plbmhnam1rIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExMDI2NDEsImV4cCI6MjA4NjY3ODY0MX0.HgoScNFXdOTFKmPn5lJuh7V0GAoABPz61p1JcjDovbE';
@@ -125,7 +125,7 @@ var NOWPCT=Math.min(100,Math.max(0,((YEAR+THIS.getMonth()/12)-AX0)/(AX1-AX0)*100
 var RC={Rosa:'#C73E75',Grün:'#2B7F47',Blau:'#3566C4'};
 var SORTS=[['trinkende','Trinkende'],['name','Name'],['position','Position'],['wert','Einzelwert']];
 var SPECIAL=['Vor Regal','Linkes Regal','Rosaregal','OWC','LIEFERUNG'];
-var S={rows:[],session:null,tab:'keller',filter:'alle',sort:0,q:'',tfilter:'jetzt',gfilter:'getrunken',detail:null,sel:null,loading:true,error:'',sheet:null,toast:''};
+var S={rows:[],session:null,tab:'keller',filter:'alle',sort:2,q:'',tfilter:'jetzt',gfilter:'getrunken',detail:null,sel:null,loading:true,error:'',sheet:null,toast:''};
 
 function $(s,r){return (r||document).querySelector(s)}
 function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
