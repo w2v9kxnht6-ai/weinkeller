@@ -142,7 +142,7 @@ h1{margin:0;font-weight:700;font-size:38px;line-height:1;letter-spacing:-.02em}
 <script>
 (function(){
 'use strict';
-var VERSION='v2.7.0 · 18.10.2026';
+var VERSION='v2.7.1 · 18.10.2026';
 var ALLOW_SKIP=false; /* entfernen, sobald die Policy auf Login umgestellt ist */
 var SUPA_URL='https://cdxmdavnspgczenhgjmk.supabase.co';
 var SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNkeG1kYXZuc3BnY3plbmhnam1rIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExMDI2NDEsImV4cCI6MjA4NjY3ODY0MX0.HgoScNFXdOTFKmPn5lJuh7V0GAoABPz61p1JcjDovbE';
@@ -174,6 +174,7 @@ function isLief(r){return String(r.position||'').toUpperCase()==='LIEFERUNG'}
 function year(v){if(v==null)return null;var m=String(v).match(/\d{4}/);return m?parseInt(m[0],10):null}
 function fmtDate(d){if(!d)return '';var p=String(d).split('-');return p.length===3?(+p[2])+'.'+(+p[1])+'.'+p[0]:d}
 function posKey(p){p=String(p||'');var m=p.match(/^([A-L])([1-7])$/i);if(m)return m[1].toUpperCase().charCodeAt(0)*10+ +m[2]-650;var i=SPECIAL.indexOf(p);return 200+(i<0?9:i)*10}
+function fold(v){return String(v==null?'':v).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/ß/g,'ss')}
 function flag(l){return FLAG[l]||''}
 function jgOf(r){return r.jahrgang?String(r.jahrgang):'ohne'}
 function fval(r,k){return k==='jg'?jgOf(r):(r[FCOL[k]]||'')}
@@ -219,10 +220,11 @@ function groups(filterFn){
 function kellerRows(){return S.rows.filter(function(r){return !isDrunk(r)})}
 function match(g,q){
   if(!q)return true;
-  q=q.toLowerCase();
-  var hay=[g.p.produzent,g.p.weinname,g.p.jahrgang,g.p.traube,g.p.flaschengroesse,g.p.weinart,g.p.land,g.p.region,(g.p.rebsorten||[]).join(' ')].join(' ').toLowerCase();
+  q=fold(q);
+  var hay=[g.p.produzent,g.p.weinname,g.p.jahrgang,g.p.traube,g.p.flaschengroesse,g.p.weinart,g.p.land,g.p.region,(g.p.rebsorten||[]).join(' ')].join(' ');
+  hay=fold(hay);
   if(hay.indexOf(q)>=0)return true;
-  return g.rows.some(function(r){return String(r.id)===q||String(r.position||'').toLowerCase().indexOf(q)>=0});
+  return g.rows.some(function(r){return String(r.id)===q||fold(r.position).indexOf(q)>=0});
 }
 function sortGroups(a,mode){
   a=a.slice();
@@ -409,8 +411,8 @@ function viewTrink(){
 function viewGetrunken(){
   var arch=S.gfilter==='archiv';
   var rows=S.rows.filter(function(r){return isDrunk(r)&&(arch?isArchiv(r):!isArchiv(r))});
-  var q=S.q.toLowerCase();
-  if(q)rows=rows.filter(function(r){return [r.produzent,r.weinname,r.jahrgang,r.genuss_notiz,r.notiz].join(' ').toLowerCase().indexOf(q)>=0||String(r.id)===q});
+  var q=fold(S.q);
+  if(q)rows=rows.filter(function(r){return fold([r.produzent,r.weinname,r.jahrgang,r.genuss_notiz,r.notiz].join(' ')).indexOf(q)>=0||String(r.id)===q});
   rows.sort(function(a,b){var da=a.getrunken_am||'',db=b.getrunken_am||'';return da<db?1:da>db?-1:b.id-a.id});
   var nD=S.rows.filter(function(r){return isDrunk(r)&&!isArchiv(r)}).length,nA=S.rows.filter(isArchiv).length;
   var h='<div class="head"><h1>Getrunken</h1><div class="stat"><small>'+(arch?nA:nD)+' Flaschen</small></div></div>';
