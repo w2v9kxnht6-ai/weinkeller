@@ -22,8 +22,8 @@ button{font:inherit;color:inherit;cursor:pointer}
 input,textarea,select{font:inherit;color:var(--ink)}
 #app{position:fixed;inset:0;display:flex;flex-direction:column}
 .scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:calc(env(safe-area-inset-top) + 18px) 20px 24px}
-.tabbar{flex:none;display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid var(--line);background:var(--ground);padding-bottom:env(safe-area-inset-bottom)}
-.tabbar button{border:0;background:none;border-top:3px solid transparent;margin-top:-1px;height:58px;font-size:14px;color:var(--muted)}
+.tabbar{flex:none;display:grid;grid-template-columns:repeat(5,1fr);border-top:1px solid var(--line);background:var(--ground);padding-bottom:env(safe-area-inset-bottom)}
+.tabbar button{border:0;background:none;border-top:3px solid transparent;margin-top:-1px;height:58px;font-size:13px;padding:0;color:var(--muted)}
 .tabbar button.on{border-top-color:var(--ink);color:var(--ink);font-weight:700}
 h1{margin:0;font-weight:700;font-size:38px;line-height:1;letter-spacing:-.02em}
 .head{display:flex;justify-content:space-between;align-items:flex-end;gap:12px}
@@ -93,6 +93,28 @@ h1{margin:0;font-weight:700;font-size:38px;line-height:1;letter-spacing:-.02em}
 .sheet .btns{display:grid;grid-template-columns:1fr 1.4fr;gap:10px;margin-top:18px}
 .quick{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
 .quick button{border:1px solid var(--field);border-radius:999px;background:none;padding:5px 11px;font-size:13px}
+/* Regal + Übersicht */
+.rg{display:grid;grid-template-columns:18px repeat(7,minmax(0,1fr));gap:4px;margin-top:14px;font-variant-numeric:tabular-nums}
+.rg .h{font-size:12px;color:var(--muted);text-align:center;align-self:center}
+.rc{height:42px;border:1px dashed var(--field);border-radius:8px;background:none;padding:0;font-size:13px;font-weight:700;color:var(--muted);position:relative}
+.rc.f{border:0;color:#fff}
+.rc.sel{outline:3px solid var(--ink);outline-offset:1px}
+.rc small{position:absolute;right:3px;top:1px;font-size:10px;font-weight:700}
+.sp{display:flex;flex-wrap:wrap;gap:6px;margin-top:16px}
+.sp button{border:1px solid var(--field);border-radius:999px;background:none;padding:5px 11px;font-size:13px}
+.sp button.on{background:var(--ink);color:var(--ground);border-color:var(--ink)}
+.rl{margin-top:14px;border-top:1px solid var(--hair)}
+.rl .it{display:grid;grid-template-columns:48px minmax(0,1fr) auto;gap:10px;padding:9px 0;border-bottom:1px solid var(--hair);cursor:pointer;align-items:center}
+.kpis{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}
+.kpi{border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.kpi small{display:block;font-size:12px;color:var(--muted)}
+.kpi b{font-size:21px;font-variant-numeric:tabular-nums}
+.dsec{margin-top:22px;font-size:14px;font-weight:700}
+.db{display:grid;grid-template-columns:minmax(0,118px) minmax(0,1fr) 44px;gap:8px;align-items:center;width:100%;border:0;background:none;padding:5px 0;text-align:left;font-size:13px}
+.db .l{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.db .t{height:10px;border-radius:5px;background:var(--track);position:relative}
+.db .t i{position:absolute;left:0;top:0;bottom:0;border-radius:5px;background:var(--ink)}
+.db .v{text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
 /* Filter */
 .fbar{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
 .pill.act{background:var(--ink);color:var(--ground);border-color:var(--ink)}
@@ -120,7 +142,7 @@ h1{margin:0;font-weight:700;font-size:38px;line-height:1;letter-spacing:-.02em}
 <script>
 (function(){
 'use strict';
-var VERSION='v2.4.1 · 18.10.2026';
+var VERSION='v2.5.0 · 18.10.2026';
 var ALLOW_SKIP=false; /* entfernen, sobald die Policy auf Login umgestellt ist */
 var SUPA_URL='https://cdxmdavnspgczenhgjmk.supabase.co';
 var SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNkeG1kYXZuc3BnY3plbmhnam1rIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExMDI2NDEsImV4cCI6MjA4NjY3ODY0MX0.HgoScNFXdOTFKmPn5lJuh7V0GAoABPz61p1JcjDovbE';
@@ -132,7 +154,7 @@ var NOWPCT=Math.min(100,Math.max(0,((YEAR+THIS.getMonth()/12)-AX0)/(AX1-AX0)*100
 var RC={Rosa:'#C73E75',Grün:'#2B7F47',Blau:'#3566C4'};
 var SORTS=[['trinkende','Trinkende'],['name','Name'],['position','Position'],['wert','Einzelwert'],['jahrgang','Jahrgang']];
 var SPECIAL=['Vor Regal','Linkes Regal','Rosaregal','OWC','LIEFERUNG'];
-var S={rows:[],session:null,tab:'keller',filter:'alle',sort:2,q:'',tfilter:'jetzt',gfilter:'getrunken',detail:null,sel:null,loading:true,error:'',sheet:null,toast:'',newVer:'',f:{art:[],land:[],region:[],jg:[]},fsheet:false};
+var S={rows:[],session:null,tab:'keller',filter:'alle',sort:2,q:'',tfilter:'jetzt',gfilter:'getrunken',detail:null,sel:null,loading:true,error:'',sheet:null,toast:'',newVer:'',f:{art:[],land:[],region:[],jg:[]},fsheet:false,regal:{mode:'ring',pos:''},dm:'n'};
 var FLAG={'Frankreich':'🇫🇷','Österreich':'🇦🇹','Italien':'🇮🇹','Spanien':'🇪🇸','Ungarn':'🇭🇺','Kroatien':'🇭🇷','Deutschland':'🇩🇪','Portugal':'🇵🇹','Slowenien':'🇸🇮','Schweiz':'🇨🇭','USA':'🇺🇸'};
 var ARTC={'Rotwein':'#A8324F','Weißwein':'#C9B458','Roséwein':'#E58FA8','Schaumwein':'#7FB6C9','Dessertwein':'#C98A3A'};
 var ARTS=['Rotwein','Weißwein','Roséwein','Schaumwein','Dessertwein'];
@@ -265,6 +287,81 @@ function viewKeller(){
       '<div class="num"><b>'+g.n+' ×</b><span>'+eur(g.wert)+'</span></div></div>';
   });
   h+='</div><div class="foot"><span>'+VERSION+' · <button data-act="refresh">Neu laden</button></span>'+(S.session?'<button data-act="logout">Abmelden</button>':'<span>ohne Anmeldung</span>')+'</div>';
+  return h;
+}
+function artFg(a){return a==='Weißwein'||a==='Roséwein'||a==='Schaumwein'||a==='Dessertwein'?'#17211B':'#fff'}
+function viewRegal(){
+  var live=kellerRows(),by={};
+  live.forEach(function(r){var k=String(r.position||'–');(by[k]=by[k]||[]).push(r)});
+  var md=S.regal.mode,sel=S.regal.pos;
+  var h='<div class="head"><h1>Regal</h1><div class="stat"><small>Färbung</small><br><button class="pill" data-act="rmode">'+(md==='ring'?'Ring':'Weinart')+'</button></div></div>';
+  h+='<div class="rg"><div></div>'+[1,2,3,4,5,6,7].map(function(c){return '<div class="h">'+c+'</div>'}).join('');
+  'ABCDEFGHIJKL'.split('').forEach(function(L){
+    h+='<div class="h">'+L+'</div>';
+    for(var c=1;c<=7;c++){
+      var k=L+c,rs=by[k]||[];
+      if(!rs.length){h+='<button class="rc'+(sel===k?' sel':'')+'" data-act="rcell" data-v="'+k+'" aria-label="'+k+' leer"></button>';continue}
+      var r=rs[0],bg,fg='#fff';
+      if(md==='ring'){var rg=ringOf(r);bg=rg?RC[rg]:'#7A857E'}
+      else{bg=ARTC[r.weinart]||'#7A857E';fg=artFg(r.weinart)}
+      h+='<button class="rc f'+(sel===k?' sel':'')+'" data-act="rcell" data-v="'+k+'" style="background:'+bg+';color:'+fg+'" aria-label="'+k+'">'+(r.jahrgang?String(r.jahrgang).slice(-2):'·')+(rs.length>1?'<small>'+rs.length+'</small>':'')+'</button>';
+    }
+  });
+  h+='</div>';
+  var other=Object.keys(by).filter(function(k){return !/^[A-L][1-7]$/i.test(k)}).sort(function(a,b){return posKey(a)-posKey(b)});
+  h+='<div class="sp">'+other.map(function(k){return '<button data-act="rcell" data-v="'+esc(k)+'" class="'+(sel===k?'on':'')+'">'+esc(k)+' '+by[k].length+'</button>'}).join('')+'</div>';
+  var leg=md==='ring'?[['Rosa',RC.Rosa],['Grün',RC['Grün']],['Blau',RC.Blau],['kein Ring','#7A857E']]:ARTS.map(function(a){return [a,ARTC[a]]});
+  h+='<div class="subbar" style="flex-wrap:wrap;justify-content:flex-start;gap:12px">'+leg.map(function(x){return '<span><span class="sq" style="background:'+x[1]+'"></span> '+esc(x[0])+'</span>'}).join('')+'</div>';
+  if(sel){
+    var list=by[sel]||[];
+    h+='<div class="sec">'+esc(sel)+': '+(list.length?list.length+' Flasche'+(list.length>1?'n':''):'leer')+'</div><div class="rl">';
+    list.forEach(function(r){
+      var g=groups(function(x){return x===r})[0];
+      h+='<div class="it" data-act="open" data-k="'+esc(keyOf(r))+'"><div style="font-size:13px;color:var(--muted)">ID '+r.id+'</div><div style="min-width:0"><div class="prod">'+(r.land?flag(r.land)+' ':'')+esc(r.produzent)+'</div><div class="name"><b class="jg">'+(r.jahrgang||'NV')+'</b>'+esc(r.weinname)+'</div></div><div style="font-size:12px;color:var(--muted);text-align:right">'+esc(windowTxt(g))+'</div></div>';
+    });
+    h+='</div>';
+  }else h+='<div class="sec">Fach antippen für Details. Zahl im Fach: Jahrgang (zweistellig), kleine Zahl oben rechts: mehrere Flaschen.</div>';
+  return h;
+}
+function dbars(title,key,rows,metric,lab,sortYear){
+  var m={};
+  rows.forEach(function(r){var v=fval(r,key);if(!v)v='ohne';var o=m[v]=m[v]||{n:0,w:0};o.n++;o.w+=num(r.aktueller_wert)||0});
+  var ks=Object.keys(m);
+  ks.sort(function(a,b){if(sortYear)return a==='ohne'?1:b==='ohne'?-1:b-a;return m[b][metric]-m[a][metric]||(a<b?-1:1)});
+  var mx=Math.max.apply(null,ks.map(function(k){return m[k][metric]}))||1;
+  var h='<div class="dsec">'+esc(title)+'</div>';
+  ks.forEach(function(k){
+    var val=metric==='n'?m[k].n:Math.round(m[k].w);
+    h+='<button class="db" data-act="dfilt" data-k="'+key+'" data-v="'+esc(k)+'"><span class="l">'+(lab?lab(k):'')+esc(k)+'</span><span class="t"><i style="width:'+(m[k][metric]/mx*100)+'%"></i></span><span class="v">'+val.toLocaleString('de-AT')+'</span></button>';
+  });
+  return h;
+}
+function viewDash(){
+  var rows=kellerRows().filter(function(r){return !isLief(r)});
+  var wert=0,ek=0,ekn=0,wk=0;
+  rows.forEach(function(r){var w=num(r.aktueller_wert)||0;wert+=w;var e=num(r.einkaufspreis);if(e!=null){ek+=e;wk+=w;ekn++}});
+  var prod={};rows.forEach(function(r){prod[r.produzent]=1});
+  var diff=wk-ek;
+  var met=S.dm;
+  var h='<div class="head"><h1>Übersicht</h1><div class="stat"><small>ohne Lieferung</small><br><button class="pill" data-act="dmode">'+(met==='n'?'Flaschen':'Wert')+'</button></div></div>';
+  h+='<div class="kpis"><div class="kpi"><small>Flaschen</small><b>'+rows.length+'</b></div><div class="kpi"><small>Wert</small><b>'+eur(wert)+'</b></div>'+
+     '<div class="kpi"><small>Einkauf ('+ekn+' Fl.)</small><b>'+eur(ek)+'</b></div><div class="kpi"><small>Wert minus Einkauf</small><b>'+(diff>=0?'+':'−')+eur(Math.abs(diff))+'</b></div></div>';
+  h+='<div class="sub" style="margin-top:8px;font-size:12px;color:var(--muted)">'+Object.keys(prod).length+' Produzenten, '+groups(function(r){return rows.indexOf(r)>=0}).length+' Weine. Balken antippen: Keller mit diesem Filter.</div>';
+  h+=dbars('Weinart','art',rows,met,function(a){return '<span class="sq" style="background:'+(ARTC[a]||'#999')+'"></span> '});
+  h+=dbars('Land','land',rows,met,function(a){return flag(a)+' '});
+  h+=dbars('Region','region',rows,met);
+  h+=dbars('Jahrgang','jg',rows,met,null,true);
+  var ring={};rows.forEach(function(r){var k=ringOf(r)||'ohne';var o=ring[k]=ring[k]||{n:0,w:0};o.n++;o.w+=num(r.aktueller_wert)||0});
+  h+='<div class="dsec">Ring</div>';
+  var rmx=Math.max.apply(null,Object.keys(ring).map(function(k){return ring[k][met]}))||1;
+  ['Rosa','Grün','Blau','ohne'].forEach(function(k){if(!ring[k])return;h+='<div class="db" style="cursor:default"><span class="l"><span class="sq" style="background:'+(RC[k]||'#7A857E')+'"></span> '+(k==='ohne'?'kein Ring':k)+'</span><span class="t"><i style="width:'+(ring[k][met]/rmx*100)+'%;background:'+(RC[k]||'#7A857E')+'"></i></span><span class="v">'+(met==='n'?ring[k].n:Math.round(ring[k].w)).toLocaleString('de-AT')+'</span></div>'});
+  var gs=groups(function(r){return rows.indexOf(r)>=0}),jetzt=0,vorbei=0,spaeter=0,keins=0;
+  gs.forEach(function(g){var c=g.n;if(g.von==null&&g.ende==null)keins+=c;else if(g.ende!=null&&g.ende<YEAR)vorbei+=c;else if(g.von!=null&&g.von>YEAR)spaeter+=c;else jetzt+=c});
+  h+='<div class="dsec">Trinkfenster heute (Flaschen)</div><div class="kpis" style="margin-top:8px"><div class="kpi"><small>Im Fenster</small><b>'+jetzt+'</b></div><div class="kpi"><small>Noch nicht</small><b>'+spaeter+'</b></div><div class="kpi"><small>Fenster vorbei</small><b>'+vorbei+'</b></div><div class="kpi"><small>Kein Fenster</small><b>'+keins+'</b></div></div>';
+  var pr={};rows.forEach(function(r){var o=pr[r.produzent]=pr[r.produzent]||{n:0,w:0};o.n++;o.w+=num(r.aktueller_wert)||0});
+  var pk=Object.keys(pr).sort(function(a,b){return pr[b][met]-pr[a][met]||(a<b?-1:1)}).slice(0,10),pm=pr[pk[0]]?pr[pk[0]][met]:1;
+  h+='<div class="dsec">Top 10 Produzenten</div>';
+  pk.forEach(function(k){h+='<div class="db" style="cursor:default"><span class="l">'+esc(k)+'</span><span class="t"><i style="width:'+(pr[k][met]/pm*100)+'%"></i></span><span class="v">'+(met==='n'?pr[k].n:Math.round(pr[k].w)).toLocaleString('de-AT')+'</span></div>'});
   return h;
 }
 function viewTrink(){
@@ -426,8 +523,8 @@ function render(){
   var body;
   if(S.loading)body='<div class="load">Lade Keller …</div>';
   else if(S.error)body='<div class="empty" style="color:var(--err)">'+esc(S.error)+'<br><br><button class="pill" data-act="reload">Neu laden</button></div>';
-  else body=S.tab==='keller'?viewKeller():S.tab==='trink'?viewTrink():viewGetrunken();
-  var tabs='<div class="tabbar">'+[['keller','Keller'],['trink','Trinkreife'],['getrunken','Getrunken']].map(function(t){return '<button data-act="tab" data-v="'+t[0]+'" class="'+(S.tab===t[0]?'on':'')+'">'+t[1]+'</button>'}).join('')+'</div>';
+  else body=S.tab==='keller'?viewKeller():S.tab==='regal'?viewRegal():S.tab==='dash'?viewDash():S.tab==='trink'?viewTrink():viewGetrunken();
+  var tabs='<div class="tabbar">'+[['keller','Keller'],['regal','Regal'],['dash','Übersicht'],['trink','Trinkreife'],['getrunken','Getrunken']].map(function(t){return '<button data-act="tab" data-v="'+t[0]+'" class="'+(S.tab===t[0]?'on':'')+'">'+t[1]+'</button>'}).join('')+'</div>';
   var st=$('.scroll');var top=st?st.scrollTop:0;
   app.innerHTML='<div class="scroll" id="sc">'+body+'</div>'+tabs;
   if(st)$('#sc').scrollTop=top;
@@ -523,6 +620,10 @@ document.addEventListener('click',function(ev){
   else if(a==='filter'){S.filter=v;render()}
   else if(a==='tfilter'){S.tfilter=v;render()}
   else if(a==='gfilter'){S.gfilter=v;render()}
+  else if(a==='rmode'){S.regal.mode=S.regal.mode==='ring'?'art':'ring';render()}
+  else if(a==='rcell'){S.regal.pos=S.regal.pos===v?'':v;render()}
+  else if(a==='dmode'){S.dm=S.dm==='n'?'w':'n';render()}
+  else if(a==='dfilt'){S.f={art:[],land:[],region:[],jg:[]};S.f[t.getAttribute('data-k')]=[v];S.filter='alle';S.tab='keller';S.q='';render();var sc2=$('#sc');if(sc2)sc2.scrollTop=0}
   else if(a==='fopen'){S.fsheet=true;render()}
   else if(a==='fclose'){if(ev.target.closest('[data-stop]')&&t.classList.contains('ov')&&ev.target.closest('.sheet'))return;S.fsheet=false;render()}
   else if(a==='fset'){var k=t.getAttribute('data-k'),i=S.f[k].indexOf(v);if(i>=0)S.f[k].splice(i,1);else S.f[k].push(v);if(k==='land')fclean();render()}
