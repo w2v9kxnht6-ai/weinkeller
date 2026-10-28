@@ -143,7 +143,7 @@ input,textarea,select{font:inherit;color:var(--ink)}
 <script>
 (function(){
 'use strict';
-var VERSION='v2.1 · 28.10.2026';
+var VERSION='v2.2 · 28.10.2026';
 var SUPA_URL='https://cdxmdavnspgczenhgjmk.supabase.co';
 var SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNkeG1kYXZuc3BnY3plbmhnam1rIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExMDI2NDEsImV4cCI6MjA4NjY3ODY0MX0.HgoScNFXdOTFKmPn5lJuh7V0GAoABPz61p1JcjDovbE';
 var ROT_BIS='2027-12-31'; /* Kiste "Rotation 2027": MHD bis zu diesem Tag, danach "Krisenvorrat 2028+" */
@@ -194,7 +194,7 @@ function perUnit(r,einheit){
   if(einheit==='kg'||einheit==='L'){
     if(r.packung_menge==null||!r.packung_einheit)return null;
     var p=Number(r.packung_menge),u=r.packung_einheit;
-    if(einheit==='kg')return u==='kg'?p:u==='g'?p/1000:null;
+    if(einheit==='kg')return u==='kg'?p:u==='g'?p/1000:u==='L'?p:u==='ml'?p/1000:null; /* Flüssigkeit: 1 L = 1 kg (Näherung, z. B. H-Milch) */
     return u==='L'?p:u==='ml'?p/1000:null;
   }
   return 1;
