@@ -142,7 +142,7 @@ h1{margin:0;font-weight:700;font-size:38px;line-height:1;letter-spacing:-.02em}
 <script>
 (function(){
 'use strict';
-var VERSION='v2.7.1 · 18.10.2026';
+var VERSION='v2.7.2 · 29.10.2026';
 var ALLOW_SKIP=false; /* entfernen, sobald die Policy auf Login umgestellt ist */
 var SUPA_URL='https://cdxmdavnspgczenhgjmk.supabase.co';
 var SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNkeG1kYXZuc3BnY3plbmhnam1rIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExMDI2NDEsImV4cCI6MjA4NjY3ODY0MX0.HgoScNFXdOTFKmPn5lJuh7V0GAoABPz61p1JcjDovbE';
@@ -202,6 +202,7 @@ function groups(filterFn){
     var p=g.p=g.rows[0];
     g.n=g.rows.length;
     g.ring='';g.rows.forEach(function(r){if(!g.ring)g.ring=ringOf(r)});
+    g.ringMixed=g.rows.some(function(r){return ringOf(r)!==ringOf(g.rows[0])});
     var s=null,e=null,open=false;
     g.rows.forEach(function(r){var a=year(r.trinkreife_start),b=year(r.trinkreife_ende);if(a!=null&&(s==null||a<s))s=a;if(b!=null&&(e==null||b>e)){e=b;open=/\+/.test(String(r.trinkreife_ende))}});
     g.von=s;g.ende=e;g.open=open;
@@ -289,7 +290,7 @@ function viewKeller(){
   h+='<div style="margin-top:8px">';
   if(!gs.length)h+='<div class="empty">Keine Treffer.</div>';
   gs.forEach(function(g){
-    var ringTxt=g.ring||'kein Ring';
+    var ringTxt=(g.ring||'kein Ring')+(g.ringMixed?' (teils)':'');
     h+='<div class="row" data-act="open" data-k="'+esc(g.key)+'"><div class="pos">'+esc(g.posTxt)+(g.posSub?'<small>'+esc(g.posSub)+'</small>':'')+'</div>'+
       '<div style="min-width:0"><div class="prod">'+(g.p.land?flag(g.p.land)+' ':'')+esc(g.p.produzent)+(g.p.region?' · '+esc(g.p.region):'')+(g.p.flaschengroesse&&!/^0[.,]75\s*l?$/i.test(String(g.p.flaschengroesse).trim())?' · '+esc(g.p.flaschengroesse):'')+'</div><div class="name"><b class="jg">'+esc(g.jg)+'</b>'+esc(g.name)+'</div>'+barHtml(g,false)+'<div class="meta">'+(g.p.weinart?'<span class="sq" style="background:'+(ARTC[g.p.weinart]||'#999')+'"></span> '+esc(g.p.weinart)+', ':'')+esc(ringTxt)+', '+esc(windowTxt(g))+'</div></div>'+
       '<div class="num"><b>'+g.n+' ×</b><span>'+eur(g.wert)+'</span></div></div>';
@@ -430,13 +431,21 @@ function viewGetrunken(){
 function viewDetail(){
   var g=detailGroup();
   if(!g)return '';
-  var p=g.p;
   var sel=g.rows.filter(function(r){return r.id===S.sel})[0]||g.rows[0];
   S.sel=sel.id;
+  var p=sel;
+  var a0=year(sel.trinkreife_start),b0=year(sel.trinkreife_ende);
+  var sg={ring:ringOf(sel),von:a0,ende:b0,open:/\+/.test(String(sel.trinkreife_ende||''))};
+  var diff=[];
+  [['EK','einkaufspreis'],['Wert','aktueller_wert'],['Ring','ring'],['Trinkfenster','trinkreife_start'],['Trinkfenster','trinkreife_ende'],['Notiz','notiz']].forEach(function(d){
+    var v0=String(sel[d[1]]==null?'':sel[d[1]]).trim();
+    if(g.rows.some(function(r){return String(r[d[1]]==null?'':r[d[1]]).trim()!==v0})&&diff.indexOf(d[0])<0)diff.push(d[0]);
+  });
   var h='<div class="scroll"><button class="back" data-act="back">‹ Zurück</button>';
   h+='<div class="prod" style="margin-top:14px;font-size:14px">'+esc(p.produzent)+'</div><h2 class="d-h1">'+esc(g.title)+'</h2>';
-  h+='<div style="margin-top:18px">'+barHtml(g,true)+'</div>';
-  h+='<div style="display:flex;justify-content:space-between;margin-top:8px;font-size:13px;color:var(--muted)"><span>'+esc(g.ring||'kein Ring')+', '+esc(windowTxt(g))+'</span><span style="font-weight:600;color:var(--ink)">'+(g.ende!=null?(g.ende<YEAR?'vorbei':'bis '+g.ende+(g.open?'+':'')):'')+'</span></div>';
+  h+='<div style="margin-top:18px">'+barHtml(sg,true)+'</div>';
+  h+='<div style="display:flex;justify-content:space-between;margin-top:8px;font-size:13px;color:var(--muted)"><span>'+esc(sg.ring||'kein Ring')+', '+esc(windowTxt(sg))+'</span><span style="font-weight:600;color:var(--ink)">'+(sg.ende!=null?(sg.ende<YEAR?'vorbei':'bis '+sg.ende+(sg.open?'+':'')):'')+'</span></div>';
+  if(g.n>1)h+='<div style="margin-top:6px;font-size:12px;color:var(--muted)">Angaben für Flasche ID '+sel.id+' ('+esc(sel.position||'–')+')'+(diff.length?'. Flaschen unterscheiden sich bei '+esc(diff.join(', ')):'')+'</div>';
   var kv=[];
   function add(k,v){if(v!=null&&String(v).trim()!=='')kv.push([k,v])}
   add('Jahrgang',p.jahrgang);add('Weinart',p.weinart);add('Land',p.land?flag(p.land)+' '+p.land:'');add('Region',p.region);add('Rebsorten',(p.rebsorten||[]).join(', '));add('Anteile',p.traube);add('Alkohol',p.alkohol);add('Restzucker',p.restzucker);
@@ -453,7 +462,7 @@ function viewDetail(){
   h+='<div style="margin-top:16px;border-top:1px solid var(--hair)">'+kvh+(p.notiz?'<div class="kv"><div>Notiz</div><div style="font-weight:400">'+esc(p.notiz)+'</div></div>':'')+'</div>';
   h+='<div class="sec">Flaschen (eine Zeile je Flasche), Auswahl für die Aktionen</div>';
   g.rows.forEach(function(r){
-    h+='<div class="btl'+(r.id===sel.id?' on':'')+'" data-act="sel" data-id="'+r.id+'"><div style="font-size:13px;color:var(--muted)">ID '+r.id+'</div><div style="font-size:15px;font-weight:600">'+esc(r.position||'–')+'</div><div style="font-size:13px;color:var(--muted)">'+(r.id===sel.id?'gewählt':'')+'</div></div>';
+    h+='<div class="btl'+(r.id===sel.id?' on':'')+'" data-act="sel" data-id="'+r.id+'"><div style="font-size:13px;color:var(--muted)">ID '+r.id+'</div><div style="min-width:0"><div style="font-size:15px;font-weight:600">'+esc(r.position||'–')+'</div><div style="font-size:12px;color:var(--muted)">'+(num(r.einkaufspreis)!=null?'EK '+eur2(num(r.einkaufspreis)):'ohne EK')+(ringOf(r)?' · <span class="sq" style="background:'+RC[ringOf(r)]+'"></span> '+esc(ringOf(r)):'')+'</div></div><div style="font-size:13px;color:var(--muted)">'+(r.id===sel.id?'gewählt':'')+'</div></div>';
   });
   h+='</div>';
   h+='<div class="actions"><button class="btn" data-act="sheet" data-v="wert">Wert</button><button class="btn" data-act="sheet" data-v="pos">Position</button><button class="btn pri" data-act="sheet" data-v="drink">Austrinken</button></div>';
